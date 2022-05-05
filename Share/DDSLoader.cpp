@@ -1,9 +1,65 @@
 ﻿#include "DDSLoader.h"
 #include <cstdio>
 #include <cassert>
+#include <string>
+
 
 namespace {
-    constexpr DWORD sg_Signature = 0x20534444;//"DDS " (Little endian)
+    constexpr DWORD SIGNATURE = 0x20534444;//"DDS " (Little endian)
+
+    namespace dds_flags {
+        constexpr DWORD DDPF_ALPHAPIXELS = 0x00000001;
+        constexpr DWORD DDPF_ALPHA = 0x00000002;
+        constexpr DWORD DDPF_FOURCC = 0x00000004;
+        constexpr DWORD DDPF_PALETTEINDEXED4 = 0x00000008;
+        constexpr DWORD DDPF_PALETTEINDEXED8 = 0x00000020;
+        constexpr DWORD DDPF_RGB = 0x00000040;
+        constexpr DWORD DDPF_LUMINANCE = 0x00020000;
+        constexpr DWORD DDPF_BUMPDUDV = 0x00080000;
+
+        constexpr DWORD DDSCAPS_ALPHA = 0x00000002;
+        constexpr DWORD DDSCAPS_COMPLEX = 0x00000008;
+        constexpr DWORD DDSCAPS_TEXTURE = 0x00001000;
+        constexpr DWORD DDSCAPS_MIPMAP = 0x00400000;
+
+        constexpr DWORD DDSCAPS2_CUBEMAP	= 0x00000200;
+        constexpr DWORD DDSCAPS2_CUBEMAP_POSITIVEX	= 0x00000400;
+        constexpr DWORD DDSCAPS2_CUBEMAP_NEGATIVEX	= 0x00000800;
+        constexpr DWORD DDSCAPS2_CUBEMAP_POSITIVEY	= 0x00001000;
+        constexpr DWORD DDSCAPS2_CUBEMAP_NEGATIVEY	= 0x00002000;
+        constexpr DWORD DDSCAPS2_CUBEMAP_POSITIVEZ	= 0x00004000;
+        constexpr DWORD DDSCAPS2_CUBEMAP_NEGATIVEZ	= 0x00008000;
+        constexpr DWORD DDSCAPS2_VOLUME	= 0x00400000;
+    };
+
+    struct DDPFTableItem {
+        const DWORD flag;
+        const wchar_t* const str;
+        const size_t strlen;
+    };
+
+#define MAKE_DDPF_ITEM(flag) dds_flags::DDPF_##flag, L""#flag, std::char_traits<wchar_t>::length(L""#flag)
+
+    constexpr DDPFTableItem sg_ddpf_tables[] = {
+        {MAKE_DDPF_ITEM(ALPHAPIXELS)},
+        {MAKE_DDPF_ITEM(ALPHA)},
+        {MAKE_DDPF_ITEM(FOURCC)},
+        {MAKE_DDPF_ITEM(PALETTEINDEXED4)},
+        {MAKE_DDPF_ITEM(PALETTEINDEXED8)},
+        {MAKE_DDPF_ITEM(RGB)},
+        {MAKE_DDPF_ITEM(LUMINANCE)},
+        {MAKE_DDPF_ITEM(BUMPDUDV)},
+    };
+    consteval size_t PixelFormatMinimumBufferCount() {
+        //1 == '\0'のぶん
+        size_t result = 1;
+        for (const auto &item : sg_ddpf_tables) {
+            //1=='|'のぶん
+            result += item.strlen+1;
+        }
+        return result;
+    }
+    static_assert(PixelFormatMinimumBufferCount() == static_cast<size_t>(dds_loader::Loader::MinimumBufferCount::PixelFormat));
 
     void DWordToByteArray(BYTE dst[4], const DWORD src) {
         dst[0] = static_cast<BYTE>((src & 0x000000ff) >> 0);
@@ -27,9 +83,9 @@ namespace {
     }
 
     //(Memo)  0x44 -> 'D'
-    const static size_t sg_asciiLength = 1;
+    constexpr size_t sg_asciiLength = 1;
     //(Memo)  0xFF -> "FF "
-    const static size_t sg_hexLength = 3;
+    constexpr size_t sg_hexLength = 3;
 
     /// <summary>
     /// コンバート可能なAscii文字数を計算する(終端の\0は考慮しない)
@@ -273,7 +329,7 @@ namespace dds_loader {
             else {
                 m_isDX10 = true;
             }
-            if (m_header.dx7.dwSignature != sg_Signature) {
+            if (m_header.dx7.dwSignature != SIGNATURE) {
                 Initialize();
                 return false;
             }
@@ -339,5 +395,44 @@ namespace dds_loader {
         }
         return MakeEmptyWStr(wcstr,sizeInWords);
     }
+
+    size_t Loader::GetDDPFFlags(wchar_t* const wcstr, size_t sizeInWords)const {
+        if (! m_validDDS) {
+            return MakeEmptyWStr(wcstr,sizeInWords);
+        }
+
+        wchar_t*    dst                 = wcstr;
+        const auto  flags            = m_header.dx7.ddspf.dwFlags;
+        bool        writeVerticalBar = false;
+        for (const auto &item : sg_ddpf_tables) {
+            if (! (item.flag & flags)) {
+                continue;
+            }
+
+            if (writeVerticalBar)[[likely]] {
+                *dst = L'|';
+                --sizeInWords;
+                ++dst;
+            } else{
+                writeVerticalBar = true;
+            }
+            if (wcscpy_s(dst, sizeInWords, item.str) != 0) {
+                //error
+                return MakeEmptyWStr(wcstr,sizeInWords);
+            }
+
+            //+1 == '\0'のぶん
+            dst         += item.strlen + 1;
+            if ((item.strlen + 1) <= sizeInWords) {
+                sizeInWords -= item.strlen + 1;
+            }
+            else {
+                //書き込み先バッファが足りない
+                return MakeEmptyWStr(wcstr,sizeInWords);
+            }
+        }
+        return std::distance(wcstr, dst);
+    }
+
 
 }; /*namespace dds_loadert*/

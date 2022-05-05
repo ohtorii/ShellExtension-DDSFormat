@@ -87,8 +87,8 @@ namespace UnitTest
             }
             {
                 std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::Reserved1)>      szField;
-                const auto writeSize = loader.GetReserved1AsWChar(szField.data(), szField.size());
-                Assert::AreEqual(writeSize, static_cast<size_t>(12));
+                const auto writeCount = loader.GetReserved1AsWChar(szField.data(), szField.size());
+                Assert::AreEqual(writeCount, static_cast<size_t>(12));
                 Assert::AreEqual(wcscmp(szField.data(), L"GIMP-DDS\\\t\x03") == 0, true);
             }
 
@@ -123,10 +123,20 @@ namespace UnitTest
                 Assert::AreEqual(szField[3], L'P');
             }
         }
+
         TEST_METHOD(GetMipMapCount) {
             Loader loader;
             Assert::AreEqual(loader.Load(MAKE_ABS_PATH("DXT1.dds")), true);
             Assert::AreEqual(loader.GetMipMapCount(),static_cast<DWORD>(7));
+        }
+
+        TEST_METHOD(GetDDPFFlags) {
+            Loader loader;
+            Assert::AreEqual(loader.Load(MAKE_ABS_PATH("8.dds")), true);
+            std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::PixelFormat)>      szField;
+            const auto writeCount = loader.GetDDPFFlags(szField.data(), szField.size());
+            Assert::AreEqual(writeCount,static_cast<size_t>(4));
+            Assert::AreEqual(wcscmp(szField.data(),L"RGB")==0, true);
         }
     };
 }

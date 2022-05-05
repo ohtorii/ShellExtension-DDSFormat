@@ -4,6 +4,7 @@
 
 #include <windows.h>
 #include <array>
+#include<string>
 
 namespace dds_loader {
     class Loader {
@@ -66,7 +67,7 @@ namespace dds_loader {
         Loader(const wchar_t* fileName);
         bool Load(const wchar_t* fileName);
 
-        enum class MinimumBufferCount:size_t{
+        enum class MinimumBufferCount :size_t {
             //+1 == '\0'のぶん
             FourCC = FourCCSize + 1,
             //+1 == '\0'のぶん
@@ -76,7 +77,9 @@ namespace dds_loader {
             //  0xFF   -> l"FF\0"
             Reserved1HexDump = Reserved1Size * 3 + 1,
             //+1 == '\0'のぶん
-            Reserved1AsciiDump=Reserved1Size + 1,
+            Reserved1AsciiDump = Reserved1Size + 1,
+
+            PixelFormat = std::char_traits<wchar_t>::length(L"ALPHAPIXELS|ALPHA|FOURCC|PALETTEINDEXED4|PALETTEINDEXED8|RGB|LUMINANCE|BUMPDUDV|") + 1,
         };
 
         /// <summary>
@@ -128,6 +131,15 @@ namespace dds_loader {
         /// <param name="sizeInWords">書き込み先の文字数（最低でもMinimumReserved1AsciiDumpCount）</param>
         /// <returns>書き込んだ文字数</returns>
         size_t GetReserved1AsAsciiDump(wchar_t* wcstr, size_t sizeInWords)const;
+
+        /// <summary>
+        /// DDS_PIXELFORMAT_DX7::dwFlagsを文字列で取得する
+        /// (Ex.) "ALPHA|FOURCC"
+        /// </summary>
+        /// <param name="wcstr">書き込み先</param>
+        /// <param name="sizeInWords">書き込み先の文字数（最低でもPixelFormat）</param>
+        /// <returns>書き込んだ文字数</returns>
+        size_t GetDDPFFlags(wchar_t* wcstr, size_t sizeInWords)const;
 
     private:
         void Initialize();
