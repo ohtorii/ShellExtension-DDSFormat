@@ -25,7 +25,6 @@ namespace dds_format {
         STDMETHODIMP Initialize(LPCSHCOLUMNINIT psci) { return S_OK; }
         STDMETHODIMP GetColumnInfo(DWORD dwIndex, SHCOLUMNINFO* psci);
         STDMETHODIMP GetItemData(LPCSHCOLUMNID pscid, LPCSHCOLUMNDATA pscd, VARIANT* pvarData);
-
     };
 };
 

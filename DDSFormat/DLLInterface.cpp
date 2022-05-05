@@ -3,9 +3,7 @@
 #include "DDSFormatColExt.h"
 #include "SpinLock.h"
 
-
 namespace {
-
     class OleStrWrapper {
     public:
         OleStrWrapper(const OleStrWrapper&) = delete;
@@ -20,7 +18,6 @@ namespace {
         }
         LPOLESTR    m_olestr;
     };
-
 
     class ThreadSafeComModule {
     public:
@@ -41,11 +38,9 @@ namespace {
     };
     ThreadSafeComModule sg_Module;
 
-
     BEGIN_OBJECT_MAP(ObjectMap)
         OBJECT_ENTRY(CLSID_DDSFormatColExt, dds_format::CDDSFormatColExt)
     END_OBJECT_MAP()
-
 
     auto const sg_RegistorPath = _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved");
 }

@@ -6,8 +6,8 @@
 namespace dds_format {
     class SpinLock {
     public:
-        SpinLock(const SpinLock&)               = delete;
-        SpinLock& operator=(const SpinLock&)    = delete;
+        SpinLock(const SpinLock&) = delete;
+        SpinLock& operator=(const SpinLock&) = delete;
 
         SpinLock() {
             const DWORD defaultValue = 512;
@@ -28,10 +28,10 @@ namespace dds_format {
 
     class Monitor {
     public:
-        Monitor(const Monitor&)               = delete;
-        Monitor& operator=(const Monitor&)    = delete;
+        Monitor(const Monitor&) = delete;
+        Monitor& operator=(const Monitor&) = delete;
 
-        Monitor(SpinLock &lock) : m_lock(lock){
+        Monitor(SpinLock& lock) : m_lock(lock) {
             m_lock.Enter();
         }
         ~Monitor() {

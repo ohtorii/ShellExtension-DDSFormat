@@ -6,37 +6,36 @@
 #include <array>
 
 namespace dds_loader {
-
     class Loader {
     private:
         struct DDS_PIXELFORMAT_DX7 {
-            DWORD dwSize;
-            DWORD dwFlags;
-            DWORD dwFourCC;
-            DWORD dwRGBBitCount;
-            DWORD dwRBitMask;
-            DWORD dwGBitMask;
-            DWORD dwBBitMask;
-            DWORD dwABitMask;
+            DWORD    dwSize;
+            DWORD    dwFlags;
+            DWORD    dwFourCC;
+            DWORD    dwRGBBitCount;
+            DWORD    dwRBitMask;
+            DWORD    dwGBitMask;
+            DWORD    dwBBitMask;
+            DWORD    dwABitMask;
         };
 
-        struct DDS_HEADER_DX7{
-            DWORD           dwSignature;
-            DWORD           dwSize;
-            DWORD           dwFlags;
-            DWORD           dwHeight;
-            DWORD           dwWidth;
-            DWORD           dwPitchOrLinearSize;
-            DWORD           dwDepth;
-            DWORD           dwMipMapCount;
-            DWORD           dwReserved1[11];
+        struct DDS_HEADER_DX7 {
+            DWORD    dwSignature;
+            DWORD    dwSize;
+            DWORD    dwFlags;
+            DWORD    dwHeight;
+            DWORD    dwWidth;
+            DWORD    dwPitchOrLinearSize;
+            DWORD    dwDepth;
+            DWORD    dwMipMapCount;
+            DWORD    dwReserved1[11];
             DDS_PIXELFORMAT_DX7 ddspf;
-            DWORD           dwCaps;
-            DWORD           dwCaps2;
-            DWORD           dwCaps3;
-            DWORD           dwCaps4;
-            DWORD           dwReserved2;
-        } ;
+            DWORD    dwCaps;
+            DWORD    dwCaps2;
+            DWORD    dwCaps3;
+            DWORD    dwCaps4;
+            DWORD    dwReserved2;
+        };
         struct DDS_HEADER_DX10 {
             DWORD    dwFormat;
             DWORD    dwDimension;
@@ -49,7 +48,6 @@ namespace dds_loader {
             DDS_HEADER_DX10     dx10;
         };
 
-
         /*enum {
             DDS10_DIMENSION_1D = 2,
             DDS10_DIMENSION_2D = 3,
@@ -57,12 +55,12 @@ namespace dds_loader {
         };*/
 
         enum {
-            FourCCSize      =sizeof(Loader::DDS_PIXELFORMAT_DX7::dwFourCC),
-            Reserved1Size   =sizeof(DDS_HEADER_DX7::dwReserved1),
+            FourCCSize = sizeof(Loader::DDS_PIXELFORMAT_DX7::dwFourCC),
+            Reserved1Size = sizeof(DDS_HEADER_DX7::dwReserved1),
         };
     public:
-        Loader(const Loader&)               = delete;
-        Loader& operator=(const Loader&)    = delete;
+        Loader(const Loader&) = delete;
+        Loader& operator=(const Loader&) = delete;
 
         Loader();
         Loader(const wchar_t* fileName);
@@ -70,19 +68,19 @@ namespace dds_loader {
 
         enum {
             //+1 == '\0'のぶん
-            MinimumFourCCCount      = FourCCSize    + 1,
-            MinimumReserved1Count   = Reserved1Size + 1,
+            MinimumFourCCCount = FourCCSize + 1,
+            MinimumReserved1Count = Reserved1Size + 1,
             //1Byteは最大3文字へ変換される
             //  0xFFA1 -> L"FF A1\0"
             //  0xFF   -> l"FF\0"
-            MinimumReserved1DumpCount = Reserved1Size*3+1
+            MinimumReserved1DumpCount = Reserved1Size * 3 + 1
         };
 
         /// <summary>
         ///  FourCCをバイト配列で得る
         /// </summary>
         /// <returns>フォーマットのバイト配列</returns>
-        std::array<BYTE,FourCCSize> GetFourCC()const;
+        std::array<BYTE, FourCCSize> GetFourCC()const;
 
         /// <summary>
         /// FourCCをワイド文字列で受け取る
@@ -92,12 +90,11 @@ namespace dds_loader {
         /// <returns>変換された文字数</returns>
         size_t GetFourCCAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
 
-
         /// <summary>
         /// dwReserved1をバイト配列で得る
         /// </summary>
         /// <returns></returns>
-        std::array<BYTE,Reserved1Size> GetReserved1()const;
+        std::array<BYTE, Reserved1Size> GetReserved1()const;
 
         /// <summary>
         /// dwReserved1をワイド文字列で得る
@@ -120,7 +117,6 @@ namespace dds_loader {
         DDS_HEADER  m_header;
         bool        m_isDX10;;
     };
-
 };
 
 #endif /* DDSFORMAT_DDSLOADER_H */
