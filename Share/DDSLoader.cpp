@@ -26,8 +26,98 @@ namespace {
         return 0;
     }
 
+    //(Memo)  0x44 -> 'D'
+    const static size_t sg_asciiLength = 1;
     //(Memo)  0xFF -> "FF "
     const static size_t sg_hexLength = 3;
+
+    /// <summary>
+    /// コンバート可能なAscii文字数を計算する(終端の\0は考慮しない)
+    /// </summary>
+    /// (Ex 1.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
+    ///         dstCount = 4;
+    ///         return     4;
+    ///
+    /// (Ex 2.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
+    ///         dstCount = 4+1;
+    ///         return     4;
+    ///
+    /// (Ex 3.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
+    ///         dstCount = 1;
+    ///         return     1;
+    /// <param name="dstCount"></param>
+    /// <param name="srcCount"></param>
+    /// <returns></returns>
+    size_t CaclConvertibleAsciiCount(size_t dstCount, size_t srcCount) {
+        if ((dstCount < sg_asciiLength) || (srcCount == 0)) {
+            return 0;
+        }
+        //srcからAscii文字列へ変換後の文字数
+        //+1 == '\0'のぶん
+        const auto dstConvertedMaxLen = srcCount * sg_asciiLength + 1;
+        if (dstConvertedMaxLen <= dstCount) {
+            return srcCount;
+        }
+        return dstCount / sg_asciiLength;
+    }
+
+    bool IsPrintableChar(int c) {
+        if ((c < ' ') || ('~' < c)) {
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// BYTE配列をASCII文字列へ変換する
+    /// (Ex.) src   = [0x44,0x44,0x53,0x20]
+    ///       dst   = L"DDS \0"
+    ///      return = 5
+    /// </summary>
+    /// <param name="dst"></param>
+    /// <param name="dstCount"></param>
+    /// <param name="src"></param>
+    /// <param name="srcCount"></param>
+    /// <returns></returns>
+    size_t ConvertByteArrayToWCstrAscii(wchar_t* const dst, const size_t dstCount, const BYTE* const src, const size_t srcCount) {
+        assert(dst != nullptr);
+        assert(src != nullptr);
+
+        const size_t convertAsciiLength = CaclConvertibleAsciiCount(dstCount, srcCount);
+        for (size_t srcIndex = 0, dstIndex = 0; srcIndex < convertAsciiLength; ++srcIndex, dstIndex += sg_asciiLength) {
+            const int srcValue = static_cast<unsigned int>(src[srcIndex]);
+
+            if (IsPrintableChar(srcValue)) {
+                //(Memo) +1 == '\0'
+                wchar_t dstTemp[sg_asciiLength + 1];
+
+                if (_snwprintf_s(dstTemp, _countof(dstTemp), _countof(dstTemp), L"%C", srcValue) == sg_asciiLength) {
+                    //success
+                    dst[dstIndex] = dstTemp[0];
+                }
+                else {
+                    //error
+                    dst[dstIndex] = L'.';
+                }
+            }
+            else {
+                dst[dstIndex] = L'.';
+            }
+        }
+
+        //バッファを0終端させる
+        size_t terminateIndex = 0;
+        if ((convertAsciiLength * sg_asciiLength) < dstCount) {
+            terminateIndex = convertAsciiLength * sg_asciiLength;
+        }
+        else {
+            terminateIndex = dstCount - 1;
+        }
+        dst[terminateIndex] = L'\0';
+
+        const size_t writeCount = terminateIndex + 1;
+        return writeCount;
+    }
 
     /// <summary>
     /// コンバート可能なAscii文字数を計算する(終端の\0は考慮しない)
@@ -50,7 +140,7 @@ namespace {
     /// <param name="dstCount"></param>
     /// <param name="srcCount"></param>
     /// <returns></returns>
-    size_t CaclConvertibleAsciiCount(size_t dstCount, size_t srcCount) {
+    size_t ConvertByteArrayToWCstr(size_t dstCount, size_t srcCount) {
         if ((dstCount < sg_hexLength) || (srcCount == 0)) {
             return 0;
         }
@@ -62,23 +152,22 @@ namespace {
         }
         return dstCount / sg_hexLength;
     }
-
     /// <summary>
     /// BYTE配列を16進数文字列へ変換する
     /// (Ex.) src   = [0x44,0x44,0x53,0x20]
     ///       dst   = L"44 44 53 20\0"
-    ///      return = 5
+    ///      return = 12
     /// </summary>
     /// <param name="dst"></param>
     /// <param name="dstSize"></param>
     /// <param name="src"></param>
     /// <param name="srcSize"></param>
     /// <returns>書き込んだ文字数</returns>
-    size_t ConvertByteArrayToWCstr(wchar_t* const dst, const size_t dstCount, const BYTE* const src, const size_t srcCount) {
+    size_t ConvertByteArrayToWCstrHex(wchar_t* const dst, const size_t dstCount, const BYTE* const src, const size_t srcCount) {
         assert(dst != nullptr);
         assert(src != nullptr);
 
-        const size_t convertAsciiLength = CaclConvertibleAsciiCount(dstCount, srcCount);
+        const size_t convertAsciiLength = ConvertByteArrayToWCstr(dstCount, srcCount);
         for (size_t srcIndex = 0, dstIndex = 0; srcIndex < convertAsciiLength; ++srcIndex, dstIndex += sg_hexLength) {
             const int srcValue = static_cast<unsigned int>(src[srcIndex]);
             //(Memo) +1 == '\0'
@@ -109,6 +198,20 @@ namespace {
 
         const size_t writeCount = terminateIndex + 1;
         return writeCount;
+    }
+
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name="wcstr"></param>
+    /// <param name="sizeInWords"></param>
+    /// <returns>書き込んだ文字数</returns>
+    size_t MakeEmptyWStr(wchar_t* wcstr, size_t sizeInWords) {
+        if (sizeInWords == 0) {
+            return 0;
+        }
+        wcstr[0] = L'\0';
+        return 1;
     }
 
     class AutoClose {
@@ -142,6 +245,7 @@ namespace dds_loader {
 
     void Loader::Initialize() {
         memset(&m_header, 0, sizeof(m_header));
+        m_validDDS = false;
         m_isDX10 = false;
     }
 
@@ -174,18 +278,26 @@ namespace dds_loader {
                 return false;
             }
         }
+        m_validDDS = true;
         return true;
     }
 
     size_t Loader::GetFourCCAsWChar(wchar_t* wcstr, size_t sizeInWords)const {
-        auto const  format = GetFourCC();
-        return ByteArrayToWCstr(wcstr, sizeInWords, format.data(), format.size());
+        if (m_validDDS) {
+            auto const  format = GetFourCC();
+            return ByteArrayToWCstr(wcstr, sizeInWords, format.data(), format.size());
+        }
+        return MakeEmptyWStr(wcstr,sizeInWords);
     }
 
     std::array<BYTE, Loader::FourCCSize> Loader::GetFourCC()const {
         BYTE buf[sizeof(DWORD)];
         DWordToByteArray(buf, m_header.dx7.ddspf.dwFourCC);
         return std::array<BYTE, Loader::FourCCSize>{buf[0], buf[1], buf[2], buf[3]};
+    }
+
+    DWORD Loader::GetMipMapCount()const {
+        return m_header.dx7.dwMipMapCount;
     }
 
     std::array<BYTE, Loader::Reserved1Size> Loader::GetReserved1()const {
@@ -205,12 +317,27 @@ namespace dds_loader {
     }
 
     size_t Loader::GetReserved1AsWChar(wchar_t* wcstr, size_t sizeInWords)const {
-        auto const  reserved1 = GetReserved1();
-        return ByteArrayToWCstr(wcstr, sizeInWords, reserved1.data(), reserved1.size());
+        if (m_validDDS) {
+            auto const  reserved1 = GetReserved1();
+            return ByteArrayToWCstr(wcstr, sizeInWords, reserved1.data(), reserved1.size());
+        }
+        return MakeEmptyWStr(wcstr,sizeInWords);
     }
 
-    size_t Loader::GetReserved1AsWCharDump(wchar_t* wcstr, size_t sizeInWords)const {
-        auto reserved1 = GetReserved1();
-        return ConvertByteArrayToWCstr(wcstr, sizeInWords, reserved1.data(), reserved1.size());
+    size_t Loader::GetReserved1AsHexDump(wchar_t* wcstr, size_t sizeInWords)const {
+        if (m_validDDS) {
+            auto reserved1 = GetReserved1();
+            return ConvertByteArrayToWCstrHex(wcstr, sizeInWords, reserved1.data(), reserved1.size());
+        }
+        return MakeEmptyWStr(wcstr,sizeInWords);
     }
+
+    size_t Loader::GetReserved1AsAsciiDump(wchar_t* wcstr, size_t sizeInWords)const {
+        if (m_validDDS) {
+            auto reserved1 = GetReserved1();
+            return ConvertByteArrayToWCstrAscii(wcstr, sizeInWords, reserved1.data(), reserved1.size());
+        }
+        return MakeEmptyWStr(wcstr,sizeInWords);
+    }
+
 }; /*namespace dds_loadert*/

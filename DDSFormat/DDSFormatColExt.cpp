@@ -2,25 +2,28 @@
 #include "DDSFormatColExt.h"
 #include "DDSLoader.h"
 #include <cstring>
+#include <cassert>
 #include <algorithm>
 
 
 namespace {
     enum class Column{
         ForCC=0,
-        Reserved1AsString,
-        Reserved1AsHex,
+        MipMapCount,
+        Reserved1AsAsciiDump,
+        Reserved1AsHexDump,
+
         Number,
     };
 };
 
 namespace dds_format {
+    STDMETHODIMP CDDSFormatColExt::Initialize(/* [[maybe_unused]] */ LPCSHCOLUMNINIT psci) {
+        (void)psci;
+        return S_OK;
+    }
     STDMETHODIMP CDDSFormatColExt::GetColumnInfo(DWORD dwIndex, SHCOLUMNINFO* psci)
     {
-        if (static_cast<DWORD>(Column::Number)  <= dwIndex) {
-            return S_FALSE;
-        }
-
         switch (dwIndex)
         {
         case Column::ForCC:
@@ -32,34 +35,45 @@ namespace dds_format {
             psci-> cChars     = 6;
             wcsncpy_s(psci->wszTitle, _countof(psci->wszTitle), _T("FourCC"), _TRUNCATE);
             wcsncpy_s(psci->wszDescription, _countof(psci->wszDescription), _T("FourCC of DDS"), _TRUNCATE);
-            break;
+            return S_OK;
 
-        case Column::Reserved1AsString:
+        case Column::MipMapCount:
             psci-> scid.fmtid = CLSID_DDSFormatColExt;
-            psci-> scid.pid   = static_cast<DWORD>(Column::Reserved1AsString);
+            psci-> scid.pid   = static_cast<DWORD>(Column::MipMapCount);
+            psci-> vt         = VT_INT;
+            psci-> fmt        = LVCFMT_RIGHT;
+            psci-> csFlags    = SHCOLSTATE_TYPE_INT;
+            psci-> cChars     = 2;
+            wcsncpy_s(psci->wszTitle, _countof(psci->wszTitle), _T("MipMapCount"), _TRUNCATE);
+            wcsncpy_s(psci->wszDescription, _countof(psci->wszDescription), _T("MipMapCount of DDS"), _TRUNCATE);
+            return S_OK;
+
+        case Column::Reserved1AsAsciiDump:
+            psci-> scid.fmtid = CLSID_DDSFormatColExt;
+            psci-> scid.pid   = static_cast<DWORD>(Column::Reserved1AsAsciiDump);
             psci-> vt         = VT_LPSTR;
             psci-> fmt        = LVCFMT_LEFT;
             psci-> csFlags    = SHCOLSTATE_TYPE_STR;
             psci-> cChars     = 16;
             wcsncpy_s(psci->wszTitle, _countof(psci->wszTitle), _T("Reserved1(string)"), _TRUNCATE);
             wcsncpy_s(psci->wszDescription, _countof(psci->wszDescription), _T("DDS reserved1 area as string"), _TRUNCATE);
-            break;
+            return S_OK;
 
-        case Column::Reserved1AsHex:
+        case Column::Reserved1AsHexDump:
             psci-> scid.fmtid = CLSID_DDSFormatColExt;
-            psci-> scid.pid   = static_cast<DWORD>(Column::Reserved1AsHex);
+            psci-> scid.pid   = static_cast<DWORD>(Column::Reserved1AsHexDump);
             psci-> vt         = VT_LPSTR;
             psci-> fmt        = LVCFMT_LEFT;
             psci-> csFlags    = SHCOLSTATE_TYPE_STR;
             psci-> cChars     = 16;
             wcsncpy_s(psci->wszTitle, _countof(psci->wszTitle), _T("Reserved1(Hex)"), _TRUNCATE);
             wcsncpy_s(psci->wszDescription, _countof(psci->wszDescription), _T("DDS reserved1 area as hex"), _TRUNCATE);
-            break;
+            return S_OK;
 
-            DEFAULT_UNREACHABLE;
+        default:
+            assert(false);
+            return S_FALSE;
         }
-
-        return S_OK;
     }
 
     STDMETHODIMP CDDSFormatColExt::GetItemData(LPCSHCOLUMNID pscid, LPCSHCOLUMNDATA pscd, VARIANT* pvarData)
@@ -82,8 +96,7 @@ namespace dds_format {
             return S_FALSE;
         }
 
-        std::array<wchar_t,dds_loader::Loader::MinimumReserved1Count>      szField;
-        static_assert(dds_loader::Loader::MinimumFourCCCount < szField.size(),"The buffer size is small.");
+        std::array<wchar_t,static_cast<size_t>(dds_loader::Loader::MinimumBufferCount::Reserved1HexDump)>      szField;
         szField[0] = '\0';//念のため
 
         {
@@ -94,16 +107,23 @@ namespace dds_format {
                 case Column::ForCC:
                     loader.GetFourCCAsWChar(szField.data(), szField.size());
                     break;
+                case Column::MipMapCount:
+                {
+                    CComVariant vData(static_cast<int>(loader.GetMipMapCount()));
+                    return vData.Detach(pvarData);
+                }
 
-                case Column::Reserved1AsString:
-                    loader.GetReserved1AsWChar(szField.data(), szField.size());
+                case Column::Reserved1AsAsciiDump:
+                    loader.GetReserved1AsAsciiDump(szField.data(), szField.size());
                     break;
 
-                case Column::Reserved1AsHex:
-                    loader.GetReserved1AsWCharDump(szField.data(), szField.size());
+                case Column::Reserved1AsHexDump:
+                    loader.GetReserved1AsHexDump(szField.data(), szField.size());
                     break;
 
-                DEFAULT_UNREACHABLE;
+                default:
+                    assert(false);
+                    return S_FALSE;
                 }
             }
             else {

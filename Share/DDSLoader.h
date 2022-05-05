@@ -66,14 +66,17 @@ namespace dds_loader {
         Loader(const wchar_t* fileName);
         bool Load(const wchar_t* fileName);
 
-        enum {
+        enum class MinimumBufferCount:size_t{
             //+1 == '\0'のぶん
-            MinimumFourCCCount = FourCCSize + 1,
-            MinimumReserved1Count = Reserved1Size + 1,
+            FourCC = FourCCSize + 1,
+            //+1 == '\0'のぶん
+            Reserved1 = Reserved1Size + 1,
             //1Byteは最大3文字へ変換される
             //  0xFFA1 -> L"FF A1\0"
             //  0xFF   -> l"FF\0"
-            MinimumReserved1DumpCount = Reserved1Size * 3 + 1
+            Reserved1HexDump = Reserved1Size * 3 + 1,
+            //+1 == '\0'のぶん
+            Reserved1AsciiDump=Reserved1Size + 1,
         };
 
         /// <summary>
@@ -89,6 +92,12 @@ namespace dds_loader {
         /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumFourCCCount)</param>
         /// <returns>変換された文字数</returns>
         size_t GetFourCCAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+
+        /// <summary>
+        /// dwMipMapCountを取得する
+        /// </summary>
+        /// <returns></returns>
+        DWORD GetMipMapCount()const;
 
         /// <summary>
         /// dwReserved1をバイト配列で得る
@@ -110,11 +119,20 @@ namespace dds_loader {
         /// <param name="wcstr">書き込み先</param>
         /// <param name="sizeInWords">>書き込み先の文字数（最低でもMinimumReserved1DumpCount）</param>
         /// <returns>書き込んだ字数</returns>
-        size_t GetReserved1AsWCharDump(wchar_t* wcstr, size_t sizeInWords)const;
+        size_t GetReserved1AsHexDump(wchar_t* wcstr, size_t sizeInWords)const;
+
+        /// <summary>
+        /// dwReserved1をASCII文字でダンプする
+        /// </summary>
+        /// <param name="wcstr">書き込み先</param>
+        /// <param name="sizeInWords">書き込み先の文字数（最低でもMinimumReserved1AsciiDumpCount）</param>
+        /// <returns>書き込んだ文字数</returns>
+        size_t GetReserved1AsAsciiDump(wchar_t* wcstr, size_t sizeInWords)const;
 
     private:
         void Initialize();
         DDS_HEADER  m_header;
+        bool        m_validDDS;
         bool        m_isDX10;;
     };
 };

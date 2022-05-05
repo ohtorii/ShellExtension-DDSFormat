@@ -22,7 +22,7 @@ namespace dds_format {
         DECLARE_REGISTRY_RESOURCEID(IDR_DDSFORMATCOLEXT)
 
     public:
-        STDMETHODIMP Initialize(LPCSHCOLUMNINIT psci) { return S_OK; }
+        STDMETHODIMP Initialize(LPCSHCOLUMNINIT psci);
         STDMETHODIMP GetColumnInfo(DWORD dwIndex, SHCOLUMNINFO* psci);
         STDMETHODIMP GetItemData(LPCSHCOLUMNID pscid, LPCSHCOLUMNDATA pscd, VARIANT* pvarData);
     };

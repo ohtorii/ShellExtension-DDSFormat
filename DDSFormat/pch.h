@@ -16,19 +16,5 @@
 #include <shlguid.h>
 #include <initguid.h>
 
-#ifdef DEFAULT_UNREACHABLE
-#undef DEFAULT_UNREACHABLE
-#endif
-#ifndef _DEBUG
-#if _MSC_VER > 1100
-#define DEFAULT_UNREACHABLE default: __assume(0); break
-#else
-#define DEFAULT_UNREACHABLE default: break
-#endif
-#elif defined(ASSERT)
-#define DEFAULT_UNREACHABLE default: ASSERT(0); break   // use MFC assert
-#else
-#define DEFAULT_UNREACHABLE default: _ASSERTE(0); break // use CRT assert
-#endif
 
 #endif
