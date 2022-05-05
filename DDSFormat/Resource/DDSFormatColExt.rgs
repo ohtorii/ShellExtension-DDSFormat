@@ -1,0 +1,23 @@
+HKCR
+{
+    NoRemove CLSID
+    {
+        ForceRemove {DD579E95-2319-4C4A-927D-7317B518CE08} = s 'DDS file format Class'
+        {
+            InprocServer32 = s '%MODULE%'
+            {
+                val ThreadingModel = s 'Apartment'
+            }
+        }
+    }
+    NoRemove Folder
+    {
+        NoRemove Shellex
+        {
+            NoRemove ColumnHandlers
+            {
+                ForceRemove {DD579E95-2319-4C4A-927D-7317B518CE08} = s 'DDS file format column extension'
+            }
+        }
+    }
+}

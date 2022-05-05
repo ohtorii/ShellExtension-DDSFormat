@@ -1,0 +1,31 @@
+import "oaidl.idl";
+import "ocidl.idl";
+	[
+		object,
+		uuid(DD53FB8A-4B2D-425F-A006-51E137237A53),
+		helpstring("IDDSFormatColExt Interface"),
+		pointer_default(unique)
+	]
+	interface IDDSFormatColExt : IUnknown
+	{
+	};
+
+[
+	uuid(DD5DC612-04B2-4AE8-B9C7-CB9C24322F57),
+	version(1.0),
+	helpstring("DDSFormat 1.0 Type Library")
+]
+library DDSFORMATLib
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+	[
+		uuid(DD579E95-2319-4C4A-927D-7317B518CE08),
+		helpstring("DDSFormatColExt Class")
+	]
+	coclass DDSFormatColExt
+	{
+		[default] interface IDDSFormatColExt;
+	};
+};
