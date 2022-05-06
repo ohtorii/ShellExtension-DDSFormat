@@ -12,6 +12,8 @@ namespace {
         ForCCAsciiDump=0,
         ForCCHexDump,
         PixelFormat,
+        Depth,
+        RGBBitCount,
         MipMapCount,
         Reserved1AsAsciiDump,
         Reserved1AsHexDump,
@@ -30,13 +32,29 @@ namespace {
         return S_OK;
     }
 
-    //typedef size_t(dds_loader::Loader::*WCstrMethod)(wchar_t*,size_t);
+    HRESULT InitializeAsInt(SHCOLUMNINFO* psci, DWORD pid, UINT chars, const wchar_t* title, const wchar_t* description) {
+        psci-> scid.fmtid = CLSID_DDSFormatColExt;
+        psci-> scid.pid   = pid;
+        psci-> vt         = VT_INT;
+        psci-> fmt        = LVCFMT_RIGHT;
+        psci-> csFlags    = SHCOLSTATE_TYPE_INT;
+        psci-> cChars     = chars;
+        wcsncpy_s(psci->wszTitle, _countof(psci->wszTitle), title, _TRUNCATE);
+        wcsncpy_s(psci->wszDescription, _countof(psci->wszDescription), description, _TRUNCATE);
+        return S_OK;
+    }
+
     HRESULT MakeWStr(dds_loader::Loader*loader, std::function<size_t(dds_loader::Loader*, wchar_t*, size_t)> method, VARIANT* pvarData) {
         std::array<wchar_t,static_cast<size_t>(dds_loader::Loader::MinimumBufferCount::Reserved1HexDump)>      szField;
         szField[0] = '\0';//念のため
         /*auto _ = */ method(loader, szField.data(), szField.size());
         szField.back() = '\0';//念のため
         CComVariant vData(szField.data());
+        return vData.Detach(pvarData);
+    }
+
+    HRESULT MakeInt(dds_loader::Loader*loader, std::function<DWORD(dds_loader::Loader*)> method, VARIANT* pvarData) {
+        CComVariant vData(static_cast<int>(method(loader)));
         return vData.Detach(pvarData);
     }
 };
@@ -51,30 +69,28 @@ namespace dds_format {
         switch (dwIndex)
         {
         case static_cast<DWORD>(Column::ForCCAsciiDump):
-            return InitializeAsString(psci, static_cast<DWORD>(Column::ForCCAsciiDump), 4, _T("FourCC(Ascii)"), _T("FourCC area as ascii dump"));
+            return InitializeAsString(psci, dwIndex, 4, _T("FourCC(Ascii)"), _T("FourCC area as ascii dump"));
 
         case static_cast<DWORD>(Column::ForCCHexDump):
-            return InitializeAsString(psci, static_cast<DWORD>(Column::ForCCHexDump), 4, _T("FourCC(Hex)"), _T("FourCC area as hex dump"));
+            return InitializeAsString(psci, dwIndex, 4, _T("FourCC(Hex)"), _T("FourCC area as hex dump"));
 
         case static_cast<DWORD>(Column::PixelFormat):
-            return InitializeAsString(psci, static_cast<DWORD>(Column::PixelFormat), 10, _T("PixelFormat"), _T("PixelFormat of DDS"));
+            return InitializeAsString(psci, dwIndex, 10, _T("PixelFormat"), _T("PixelFormat of DDS"));
+
+        case static_cast<DWORD>(Column::Depth):
+            return InitializeAsInt(psci, dwIndex, 2, _T("Depth"), _T("Depth of DDS"));
+
+        case static_cast<DWORD>(Column::RGBBitCount):
+            return InitializeAsInt(psci, dwIndex, 2, _T("RGBBitCount"), _T("RGBBitCount of DDS"));
 
         case static_cast<DWORD>(Column::MipMapCount):
-            psci-> scid.fmtid = CLSID_DDSFormatColExt;
-            psci-> scid.pid   = static_cast<DWORD>(Column::MipMapCount);
-            psci-> vt         = VT_INT;
-            psci-> fmt        = LVCFMT_RIGHT;
-            psci-> csFlags    = SHCOLSTATE_TYPE_INT;
-            psci-> cChars     = 2;
-            wcsncpy_s(psci->wszTitle, _countof(psci->wszTitle), _T("MipMapCount"), _TRUNCATE);
-            wcsncpy_s(psci->wszDescription, _countof(psci->wszDescription), _T("MipMapCount of DDS"), _TRUNCATE);
-            return S_OK;
+            return InitializeAsInt(psci, dwIndex, 2, _T("MipMapCount"), _T("MipMapCount of DDS"));
 
         case static_cast<DWORD>(Column::Reserved1AsAsciiDump):
-            return InitializeAsString(psci, static_cast<DWORD>(Column::Reserved1AsAsciiDump), 16, _T("Reserved1(Ascii)"), _T("DDS reserved1 area as Ascii dump"));
+            return InitializeAsString(psci, dwIndex, 16, _T("Reserved1(Ascii)"), _T("DDS reserved1 area as Ascii dump"));
 
         case static_cast<DWORD>(Column::Reserved1AsHexDump):
-            return InitializeAsString(psci, static_cast<DWORD>(Column::Reserved1AsHexDump), 16, _T("Reserved1(Hex)"), _T("DDS reserved1 area as hex dump"));
+            return InitializeAsString(psci, dwIndex, 16, _T("Reserved1(Hex)"), _T("DDS reserved1 area as hex dump"));
 
         default:
             assert(false);
@@ -105,30 +121,33 @@ namespace dds_format {
         {
              using namespace std::placeholders;
 
-            dds_loader::Loader loader;
-            if (loader.Load(pscd->wszFile)) {
+            dds_loader::Loader m_LoaderDXT1;
+            if (m_LoaderDXT1.Load(pscd->wszFile)) {
                 switch (pscid->pid)
                 {
                 case static_cast<DWORD>(Column::ForCCAsciiDump):
-                    return MakeWStr(&loader, &dds_loader::Loader::GetFourCCAsAsciiDump, pvarData);
+                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetFourCCAsAsciiDump, pvarData);
 
                 case static_cast<DWORD>(Column::ForCCHexDump):
-                    return MakeWStr(&loader, &dds_loader::Loader::GetFourCCAsHexDump, pvarData);
+                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetFourCCAsHexDump, pvarData);
 
                 case static_cast<DWORD>(Column::PixelFormat):
-                    return MakeWStr(&loader, &dds_loader::Loader::GetDDPFFlags, pvarData);
+                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetDDPFFlags, pvarData);
+
+                case static_cast<DWORD>(Column::Depth):
+                    return MakeInt(&m_LoaderDXT1, &dds_loader::Loader::GetDepth, pvarData);
+
+                case static_cast<DWORD>(Column::RGBBitCount):
+                    return MakeInt(&m_LoaderDXT1, &dds_loader::Loader::GetRGBBitCount, pvarData);
 
                 case static_cast<DWORD>(Column::MipMapCount):
-                {
-                    CComVariant vData(static_cast<int>(loader.GetMipMapCount()));
-                    return vData.Detach(pvarData);
-                }
+                    return MakeInt(&m_LoaderDXT1, &dds_loader::Loader::GetMipMapCount, pvarData);
 
                 case static_cast<DWORD>(Column::Reserved1AsAsciiDump):
-                    return MakeWStr(&loader, &dds_loader::Loader::GetReserved1AsAsciiDump, pvarData);
+                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetReserved1AsAsciiDump, pvarData);
 
                 case static_cast<DWORD>(Column::Reserved1AsHexDump):
-                    return MakeWStr(&loader, &dds_loader::Loader::GetReserved1AsHexDump, pvarData);
+                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetReserved1AsHexDump, pvarData);
 
                 [[unlikely]]default:
                     assert(false);

@@ -364,6 +364,14 @@ namespace dds_loader {
         return m_header.dx7.dwMipMapCount;
     }
 
+    DWORD Loader::GetDepth()const {
+        return m_header.dx7.dwDepth;
+    }
+
+    DWORD Loader::GetRGBBitCount()const {
+        return m_header.dx7.ddspf.dwRGBBitCount;
+
+    }
     std::array<BYTE, Loader::Reserved1Size> Loader::GetReserved1()const {
         std::array<BYTE, Loader::Reserved1Size> result;
         auto it = result.begin();

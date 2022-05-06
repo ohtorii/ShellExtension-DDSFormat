@@ -9,5 +9,7 @@
 
 // プリコンパイルするヘッダーをここに追加します
 #include "DDSLoader.h"
+#include "TestCommon.h"
+#include <array>
 
 #endif //PCH_H

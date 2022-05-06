@@ -118,10 +118,22 @@ namespace dds_loader {
         size_t GetFourCCAsHexDump(wchar_t* wcstr, size_t sizeInWords)const;
 
         /// <summary>
-        /// dwMipMapCountを取得する
+        /// DDS_HEADER_DX7::dwMipMapCountを取得する
         /// </summary>
         /// <returns></returns>
         DWORD GetMipMapCount()const;
+
+        /// <summary>
+        /// DDS_HEADER_DX7::dwDepthを取得する
+        /// </summary>
+        /// <returns></returns>
+        DWORD GetDepth()const;
+        
+        /// <summary>
+        /// DDS_PIXELFORMAT_DX7::dwRGBBitCountを取得する
+        /// </summary>
+        /// <returns></returns>
+        DWORD GetRGBBitCount()const;
 
         /// <summary>
         /// dwReserved1をバイト配列で得る
