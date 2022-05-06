@@ -338,10 +338,18 @@ namespace dds_loader {
         return true;
     }
 
-    size_t Loader::GetFourCCAsWChar(wchar_t* wcstr, size_t sizeInWords)const {
+    size_t Loader::GetFourCCAsAsciiDump(wchar_t* wcstr, size_t sizeInWords)const {
         if (m_validDDS) {
-            auto const  format = GetFourCC();
-            return ByteArrayToWCstr(wcstr, sizeInWords, format.data(), format.size());
+            auto const  fourcc = GetFourCC();
+            return ConvertByteArrayToWCstrAscii(wcstr, sizeInWords, fourcc.data(), fourcc.size());
+        }
+        return MakeEmptyWStr(wcstr,sizeInWords);
+    }
+
+    size_t Loader::GetFourCCAsHexDump(wchar_t* wcstr, size_t sizeInWords)const{
+        if (m_validDDS) {
+            auto const  fourcc = GetFourCC();
+            return ConvertByteArrayToWCstrHex(wcstr, sizeInWords, fourcc.data(), fourcc.size());
         }
         return MakeEmptyWStr(wcstr,sizeInWords);
     }
@@ -421,17 +429,17 @@ namespace dds_loader {
                 return MakeEmptyWStr(wcstr,sizeInWords);
             }
 
-            //+1 == '\0'のぶん
-            dst         += item.strlen + 1;
-            if ((item.strlen + 1) <= sizeInWords) {
-                sizeInWords -= item.strlen + 1;
+            dst += item.strlen;
+            if ((item.strlen) <= sizeInWords) {
+                sizeInWords -= item.strlen;
             }
             else {
                 //書き込み先バッファが足りない
                 return MakeEmptyWStr(wcstr,sizeInWords);
             }
         }
-        return std::distance(wcstr, dst);
+        //+1 == '\0'のぶん
+        return std::distance(wcstr, dst) + 1;
     }
 
 

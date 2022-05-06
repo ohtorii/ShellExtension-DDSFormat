@@ -9,7 +9,8 @@
 
 namespace {
     enum class Column : DWORD{
-        ForCC=0,
+        ForCCAsciiDump=0,
+        ForCCHexDump,
         PixelFormat,
         MipMapCount,
         Reserved1AsAsciiDump,
@@ -49,8 +50,11 @@ namespace dds_format {
     {
         switch (dwIndex)
         {
-        case static_cast<DWORD>(Column::ForCC):
-            return InitializeAsString(psci, static_cast<DWORD>(Column::ForCC), 4, _T("FourCC"), _T("FourCC of DDS"));
+        case static_cast<DWORD>(Column::ForCCAsciiDump):
+            return InitializeAsString(psci, static_cast<DWORD>(Column::ForCCAsciiDump), 4, _T("FourCC(Ascii)"), _T("FourCC area as ascii dump"));
+
+        case static_cast<DWORD>(Column::ForCCHexDump):
+            return InitializeAsString(psci, static_cast<DWORD>(Column::ForCCHexDump), 4, _T("FourCC(Hex)"), _T("FourCC area as hex dump"));
 
         case static_cast<DWORD>(Column::PixelFormat):
             return InitializeAsString(psci, static_cast<DWORD>(Column::PixelFormat), 10, _T("PixelFormat"), _T("PixelFormat of DDS"));
@@ -105,8 +109,11 @@ namespace dds_format {
             if (loader.Load(pscd->wszFile)) {
                 switch (pscid->pid)
                 {
-                case static_cast<DWORD>(Column::ForCC):
-                    return MakeWStr(&loader, &dds_loader::Loader::GetFourCCAsWChar, pvarData);
+                case static_cast<DWORD>(Column::ForCCAsciiDump):
+                    return MakeWStr(&loader, &dds_loader::Loader::GetFourCCAsAsciiDump, pvarData);
+
+                case static_cast<DWORD>(Column::ForCCHexDump):
+                    return MakeWStr(&loader, &dds_loader::Loader::GetFourCCAsHexDump, pvarData);
 
                 case static_cast<DWORD>(Column::PixelFormat):
                     return MakeWStr(&loader, &dds_loader::Loader::GetDDPFFlags, pvarData);

@@ -56,8 +56,8 @@ namespace dds_loader {
         };*/
 
         enum {
-            FourCCSize = sizeof(Loader::DDS_PIXELFORMAT_DX7::dwFourCC),
-            Reserved1Size = sizeof(DDS_HEADER_DX7::dwReserved1),
+            FourCCSize      = sizeof(Loader::DDS_PIXELFORMAT_DX7::dwFourCC),
+            Reserved1Size   = sizeof(DDS_HEADER_DX7::dwReserved1),
         };
     public:
         Loader(const Loader&) = delete;
@@ -69,9 +69,16 @@ namespace dds_loader {
 
         enum class MinimumBufferCount :size_t {
             //+1 == '\0'のぶん
-            FourCC = FourCCSize + 1,
+            FourCCAsciiDump = FourCCSize + 1,
+
+            //1Byteは最大3文字へ変換される
+            //  0xFFA1 -> L"FF A1\0"
+            //  0xFF   -> l"FF\0"
+            FourCCHexDump = FourCCSize * 3 + 1,
+
             //+1 == '\0'のぶん
             Reserved1 = Reserved1Size + 1,
+
             //1Byteは最大3文字へ変換される
             //  0xFFA1 -> L"FF A1\0"
             //  0xFF   -> l"FF\0"
@@ -84,17 +91,31 @@ namespace dds_loader {
 
         /// <summary>
         ///  FourCCをバイト配列で得る
+        /// (Ex. 1) {'D','X','1','0'}
+        /// (Ex. 2) {0x00, 0x00, 0x00, 0x24}  //<--A16B16G16R16
         /// </summary>
         /// <returns>フォーマットのバイト配列</returns>
         std::array<BYTE, FourCCSize> GetFourCC()const;
 
         /// <summary>
         /// FourCCをワイド文字列で受け取る
+        /// (Ex. 1) L"DX10"
+        /// (Ex. 2) L"...."  //<--0x00000024(A16B16G16R16)は全てさせ移御文字（表示できない）なので L"...." となる
         /// </summary>
         /// <param name="wcstr">書き込み先</param>
-        /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumFourCCCount)</param>
+        /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::AsciiDumpFourCC)</param>
         /// <returns>変換された文字数</returns>
-        size_t GetFourCCAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+        size_t GetFourCCAsAsciiDump(wchar_t* wcstr, size_t sizeInWords)const;
+
+        /// <summary>
+        /// FourCCをフォーマットで取得する
+        /// (Ex. 1) {'D','X','1','0'}
+        /// (Ex. 2) {'A','1','6','B','1','6','G','1','6','R','1','6'}
+        /// </summary>
+        /// <param name="wcstr">書き込み先</param>
+        /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::FourCCHexDump)</param>
+        /// <returns></returns>
+        size_t GetFourCCAsHexDump(wchar_t* wcstr, size_t sizeInWords)const;
 
         /// <summary>
         /// dwMipMapCountを取得する
@@ -112,7 +133,7 @@ namespace dds_loader {
         /// dwReserved1をワイド文字列で得る
         /// </summary>
         /// <param name="wcstr">書き込み先</param>
-        /// <param name="sizeInWords">書き込み先の文字数（最低でもMinimumReserved1Count）</param>
+        /// <param name="sizeInWords">書き込み先の文字数（最低でもMinimumBufferCount::Reserved1）</param>
         /// <returns>書き込んだ文字数</returns>
         size_t GetReserved1AsWChar(wchar_t* wcstr, size_t sizeInWords)const;
 
@@ -120,7 +141,7 @@ namespace dds_loader {
         /// dwReserved1を16進数でダンプする
         /// </summary>
         /// <param name="wcstr">書き込み先</param>
-        /// <param name="sizeInWords">>書き込み先の文字数（最低でもMinimumReserved1DumpCount）</param>
+        /// <param name="sizeInWords">>書き込み先の文字数（最低でもvMinimumBufferCount::Reserved1HexDump）</param>
         /// <returns>書き込んだ字数</returns>
         size_t GetReserved1AsHexDump(wchar_t* wcstr, size_t sizeInWords)const;
 
@@ -128,7 +149,7 @@ namespace dds_loader {
         /// dwReserved1をASCII文字でダンプする
         /// </summary>
         /// <param name="wcstr">書き込み先</param>
-        /// <param name="sizeInWords">書き込み先の文字数（最低でもMinimumReserved1AsciiDumpCount）</param>
+        /// <param name="sizeInWords">書き込み先の文字数（最低でもvMinimumBufferCount::::Reserved1AsciiDump）</param>
         /// <returns>書き込んだ文字数</returns>
         size_t GetReserved1AsAsciiDump(wchar_t* wcstr, size_t sizeInWords)const;
 

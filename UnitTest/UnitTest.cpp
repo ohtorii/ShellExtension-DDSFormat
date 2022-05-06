@@ -20,8 +20,8 @@ namespace UnitTest
             Loader loader;
             Assert::AreEqual(loader.Load(L"FileNotFound"), false);
 
-            std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::FourCC)>      szField;
-            const auto writeSize = loader.GetFourCCAsWChar(szField.data(), szField.size());
+            std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::FourCCAsciiDump)>      szField;
+            const auto writeSize = loader.GetFourCCAsAsciiDump(szField.data(), szField.size());
             //1 == '\0'を書き込んだぶん
             Assert::AreEqual(writeSize, static_cast<size_t>(1));
             Assert::AreEqual(wcscmp(szField.data(), L"") == 0, true);
@@ -34,7 +34,7 @@ namespace UnitTest
 
             {
                 std::array<wchar_t, 32>      szField;
-                const auto writeSize = loader.GetFourCCAsWChar(szField.data(), szField.size());
+                const auto writeSize = loader.GetFourCCAsAsciiDump(szField.data(), szField.size());
                 //1 == '\0'を書き込んだぶん
                 Assert::AreEqual(writeSize, static_cast<size_t>(1));
                 Assert::AreEqual(wcscmp(szField.data(), L"") == 0, true);
@@ -67,10 +67,16 @@ namespace UnitTest
                 Assert::AreEqual(format[3], static_cast<BYTE>('1'));
             }
             {
-                std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::FourCC)>      szField;
-                const auto writeSize = loader.GetFourCCAsWChar(szField.data(), szField.size());
-                Assert::AreEqual(writeSize, static_cast<size_t>(Loader::MinimumBufferCount::FourCC));
+                std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::FourCCAsciiDump)>      szField;
+                const auto writeSize = loader.GetFourCCAsAsciiDump(szField.data(), szField.size());
+                Assert::AreEqual(writeSize, static_cast<size_t>(Loader::MinimumBufferCount::FourCCAsciiDump));
                 Assert::AreEqual(wcscmp(szField.data(), L"DXT1") == 0, true);
+            }
+            {
+                std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::FourCCHexDump)>      szField;
+                const auto writeSize = loader.GetFourCCAsHexDump(szField.data(), szField.size());
+                Assert::AreEqual(writeSize, static_cast<size_t>(Loader::MinimumBufferCount::FourCCHexDump));
+                Assert::AreEqual(wcscmp(szField.data(), L"44 58 54 31 ") == 0, true); //"DXT1"
             }
         }
 
@@ -132,11 +138,11 @@ namespace UnitTest
 
         TEST_METHOD(GetDDPFFlags) {
             Loader loader;
-            Assert::AreEqual(loader.Load(MAKE_ABS_PATH("8.dds")), true);
+            Assert::AreEqual(loader.Load(MAKE_ABS_PATH("DDPixelFormat_0xFFFFFFFF.dds")), true);
             std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::PixelFormat)>      szField;
             const auto writeCount = loader.GetDDPFFlags(szField.data(), szField.size());
-            Assert::AreEqual(writeCount,static_cast<size_t>(4));
-            Assert::AreEqual(wcscmp(szField.data(),L"RGB")==0, true);
+            Assert::AreEqual(writeCount,static_cast<size_t>(0x50));
+            //Assert::AreEqual(wcscmp(szField.data(),L"RGB")==0, true);
         }
     };
 }
