@@ -14,6 +14,8 @@ namespace {
         PixelFormat,
         Depth,
         RGBBitCount,
+        Caps,
+        Caps2,
         MipMapCount,
         Reserved1AsAsciiDump,
         Reserved1AsHexDump,
@@ -83,6 +85,12 @@ namespace dds_format {
         case static_cast<DWORD>(Column::RGBBitCount):
             return InitializeAsInt(psci, dwIndex, 2, _T("RGBBitCount"), _T("RGBBitCount of DDS"));
 
+        case static_cast<DWORD>(Column::Caps):
+            return InitializeAsString(psci, dwIndex, 10, _T("Caps"), _T("Caps of DDS"));
+
+        case static_cast<DWORD>(Column::Caps2):
+            return InitializeAsString(psci, dwIndex, 10, _T("Caps2"), _T("Caps2 of DDS"));
+
         case static_cast<DWORD>(Column::MipMapCount):
             return InitializeAsInt(psci, dwIndex, 2, _T("MipMapCount"), _T("MipMapCount of DDS"));
 
@@ -132,13 +140,19 @@ namespace dds_format {
                     return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetFourCCAsHexDump, pvarData);
 
                 case static_cast<DWORD>(Column::PixelFormat):
-                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetDDPFFlags, pvarData);
+                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetDDPFFlagsAsWChar, pvarData);
 
                 case static_cast<DWORD>(Column::Depth):
                     return MakeInt(&m_LoaderDXT1, &dds_loader::Loader::GetDepth, pvarData);
 
                 case static_cast<DWORD>(Column::RGBBitCount):
                     return MakeInt(&m_LoaderDXT1, &dds_loader::Loader::GetRGBBitCount, pvarData);
+
+                case static_cast<DWORD>(Column::Caps):
+                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetCapsAsWChar, pvarData);
+
+                case static_cast<DWORD>(Column::Caps2):
+                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetCaps2AsWChar, pvarData);
 
                 case static_cast<DWORD>(Column::MipMapCount):
                     return MakeInt(&m_LoaderDXT1, &dds_loader::Loader::GetMipMapCount, pvarData);

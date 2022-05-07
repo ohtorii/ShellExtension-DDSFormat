@@ -32,34 +32,82 @@ namespace {
         constexpr DWORD DDSCAPS2_VOLUME	= 0x00400000;
     };
 
-    struct DDPFTableItem {
-        const DWORD flag;
-        const wchar_t* const str;
-        const size_t strlen;
+    namespace {
+        struct FlagTableItem {
+            const DWORD flag;
+            const wchar_t* const str;
+            const size_t strlen;
+        };
+
+        consteval size_t PixelFormatMinimumBufferCount(const FlagTableItem* const tables, size_t const tableCount) {
+                //1 == '\0'のぶん
+                size_t result = 1;
+                for (size_t i = 0; i < tableCount; ++i) {
+                    //1=='|'のぶん
+                    result += tables[i].strlen + 1;
+                }
+                return result;
+            }
+
+        namespace {
+            #define MAKE_DDPF_ITEM(flag) dds_flags::DDPF_##flag, L""#flag, std::char_traits<wchar_t>::length(L""#flag)
+            constexpr FlagTableItem sg_ddpf_tables[] = {
+                {MAKE_DDPF_ITEM(ALPHAPIXELS)},
+                {MAKE_DDPF_ITEM(ALPHA)},
+                {MAKE_DDPF_ITEM(FOURCC)},
+                {MAKE_DDPF_ITEM(PALETTEINDEXED4)},
+                {MAKE_DDPF_ITEM(PALETTEINDEXED8)},
+                {MAKE_DDPF_ITEM(RGB)},
+                {MAKE_DDPF_ITEM(LUMINANCE)},
+                {MAKE_DDPF_ITEM(BUMPDUDV)},
+            };
+            static_assert(PixelFormatMinimumBufferCount(sg_ddpf_tables, _countof(sg_ddpf_tables)) == static_cast<size_t>(dds_loader::Loader::MinimumBufferCount::PixelFormat));
+        };
+
+        namespace {
+            #define MAKE_DDSCAPS_ITEM(flag) DDSCAPS_##flag, L""#flag, std::char_traits<wchar_t>::length(L""#flag)
+
+            constexpr DWORD DDSCAPS_ALPHA	=0x00000002;
+            constexpr DWORD DDSCAPS_COMPLEX	=0x00000008;
+            constexpr DWORD DDSCAPS_TEXTURE	=0x00001000;
+            constexpr DWORD DDSCAPS_MIPMAP	=0x00400000;
+
+            constexpr FlagTableItem sg_caps_tables[] = {
+                {MAKE_DDSCAPS_ITEM(ALPHA)},
+                {MAKE_DDSCAPS_ITEM(COMPLEX)},
+                {MAKE_DDSCAPS_ITEM(TEXTURE)},
+                {MAKE_DDSCAPS_ITEM(MIPMAP)},
+            };
+
+            static_assert(PixelFormatMinimumBufferCount(sg_caps_tables, _countof(sg_caps_tables)) == static_cast<size_t>(dds_loader::Loader::MinimumBufferCount::Caps));
+        };
+
+        namespace {
+            constexpr DWORD DDSCAPS2_CUBEMAP	=0x00000200;
+            constexpr DWORD DDSCAPS2_POSITIVE_X	=0x00000400;
+            constexpr DWORD DDSCAPS2_NEGATIVE_X	=0x00000800;
+            constexpr DWORD DDSCAPS2_POSITIVE_Y	=0x00001000;
+            constexpr DWORD DDSCAPS2_NEGATIVE_Y	=0x00002000;
+            constexpr DWORD DDSCAPS2_POSITIVE_Z	=0x00004000;
+            constexpr DWORD DDSCAPS2_NEGATIVE_Z	=0x00008000;
+            constexpr DWORD DDSCAPS2_VOLUME	    =0x00400000;
+
+            #define MAKE_DDSCAPS2_ITEM(flag) DDSCAPS2_##flag, L""#flag, std::char_traits<wchar_t>::length(L""#flag)
+            constexpr FlagTableItem sg_caps2_tables[] = {
+                {MAKE_DDSCAPS2_ITEM(CUBEMAP)},
+                {MAKE_DDSCAPS2_ITEM(POSITIVE_X)},
+                {MAKE_DDSCAPS2_ITEM(NEGATIVE_X)},
+                {MAKE_DDSCAPS2_ITEM(POSITIVE_Y)},
+                {MAKE_DDSCAPS2_ITEM(NEGATIVE_Y)},
+                {MAKE_DDSCAPS2_ITEM(POSITIVE_Z)},
+                {MAKE_DDSCAPS2_ITEM(NEGATIVE_Z)},
+                {MAKE_DDSCAPS2_ITEM(VOLUME)},
+            };
+
+            static_assert(PixelFormatMinimumBufferCount(sg_caps2_tables, _countof(sg_caps2_tables)) == static_cast<size_t>(dds_loader::Loader::MinimumBufferCount::Caps2));
+        };
     };
 
-#define MAKE_DDPF_ITEM(flag) dds_flags::DDPF_##flag, L""#flag, std::char_traits<wchar_t>::length(L""#flag)
-
-    constexpr DDPFTableItem sg_ddpf_tables[] = {
-        {MAKE_DDPF_ITEM(ALPHAPIXELS)},
-        {MAKE_DDPF_ITEM(ALPHA)},
-        {MAKE_DDPF_ITEM(FOURCC)},
-        {MAKE_DDPF_ITEM(PALETTEINDEXED4)},
-        {MAKE_DDPF_ITEM(PALETTEINDEXED8)},
-        {MAKE_DDPF_ITEM(RGB)},
-        {MAKE_DDPF_ITEM(LUMINANCE)},
-        {MAKE_DDPF_ITEM(BUMPDUDV)},
-    };
-    consteval size_t PixelFormatMinimumBufferCount() {
-        //1 == '\0'のぶん
-        size_t result = 1;
-        for (const auto &item : sg_ddpf_tables) {
-            //1=='|'のぶん
-            result += item.strlen+1;
-        }
-        return result;
-    }
-    static_assert(PixelFormatMinimumBufferCount() == static_cast<size_t>(dds_loader::Loader::MinimumBufferCount::PixelFormat));
 
     void DWordToByteArray(BYTE dst[4], const DWORD src) {
         dst[0] = static_cast<BYTE>((src & 0x000000ff) >> 0);
@@ -270,6 +318,42 @@ namespace {
         return 1;
     }
 
+    size_t MakeFlagsWStr(wchar_t* const wcstr, size_t sizeInWords, const DWORD flags, const FlagTableItem * const tables, const size_t tablesCount)
+    {
+        wchar_t* dst = wcstr;
+        bool     writeVerticalBar = false;
+        for (size_t i = 0; i < tablesCount; ++i) {
+            const auto& item = tables[i];
+            if (!(item.flag & flags)) {
+                continue;
+            }
+
+            if (writeVerticalBar) [[likely]] {
+                *dst = L'|';
+            --sizeInWords;
+            ++dst;
+            }
+            else {
+                writeVerticalBar = true;
+            }
+            if (wcscpy_s(dst, sizeInWords, item.str) != 0) {
+                //error
+                return MakeEmptyWStr(wcstr, sizeInWords);
+            }
+
+            dst += item.strlen;
+            if ((item.strlen) <= sizeInWords) {
+                sizeInWords -= item.strlen;
+            }
+            else {
+                //書き込み先バッファが足りない
+                return MakeEmptyWStr(wcstr, sizeInWords);
+            }
+        }
+        //+1 == '\0'のぶん
+        return std::distance(wcstr, dst) + 1;
+    }
+
     class AutoClose {
     public:
         AutoClose(const AutoClose&) = delete;
@@ -354,10 +438,10 @@ namespace dds_loader {
         return MakeEmptyWStr(wcstr,sizeInWords);
     }
 
-    std::array<BYTE, Loader::FourCCSize> Loader::GetFourCC()const {
+    std::array<BYTE, static_cast<size_t>(Loader::MemberSize::FourCCSize)> Loader::GetFourCC()const {
         BYTE buf[sizeof(DWORD)];
         DWordToByteArray(buf, m_header.dx7.ddspf.dwFourCC);
-        return std::array<BYTE, Loader::FourCCSize>{buf[0], buf[1], buf[2], buf[3]};
+        return std::array<BYTE, static_cast<size_t>(Loader::MemberSize::FourCCSize)>{buf[0], buf[1], buf[2], buf[3]};
     }
 
     DWORD Loader::GetMipMapCount()const {
@@ -370,10 +454,32 @@ namespace dds_loader {
 
     DWORD Loader::GetRGBBitCount()const {
         return m_header.dx7.ddspf.dwRGBBitCount;
-
     }
-    std::array<BYTE, Loader::Reserved1Size> Loader::GetReserved1()const {
-        std::array<BYTE, Loader::Reserved1Size> result;
+
+    DWORD Loader::GetCaps()const {
+        return m_header.dx7.dwCaps;
+    }
+
+    DWORD Loader::GetCapsAsWChar(wchar_t* wcstr, size_t sizeInWords)const {
+        if (! m_validDDS) {
+            return MakeEmptyWStr(wcstr,sizeInWords);
+        }
+        return MakeFlagsWStr(wcstr, sizeInWords, GetCaps(), sg_caps_tables, _countof(sg_caps_tables));
+    }
+
+    DWORD Loader::GetCaps2()const {
+        return m_header.dx7.dwCaps2;
+    }
+
+    DWORD Loader::GetCaps2AsWChar(wchar_t* wcstr, size_t sizeInWords)const {
+        if (! m_validDDS) {
+            return MakeEmptyWStr(wcstr,sizeInWords);
+        }
+        return MakeFlagsWStr(wcstr, sizeInWords, GetCaps2(), sg_caps2_tables, _countof(sg_caps2_tables));
+    }
+
+    std::array<BYTE, static_cast<size_t>(Loader::MemberSize::Reserved1Size)> Loader::GetReserved1()const {
+        std::array<BYTE, static_cast<size_t>(Loader::MemberSize::Reserved1Size)> result;
         auto it = result.begin();
         for (const DWORD value : m_header.dx7.dwReserved1) {
             BYTE buf[sizeof(DWORD)];
@@ -412,43 +518,17 @@ namespace dds_loader {
         return MakeEmptyWStr(wcstr,sizeInWords);
     }
 
-    size_t Loader::GetDDPFFlags(wchar_t* const wcstr, size_t sizeInWords)const {
+    size_t Loader::GetDDPFFlags() const{
+        return m_header.dx7.ddspf.dwFlags;
+    }
+
+    size_t Loader::GetDDPFFlagsAsWChar(wchar_t* const wcstr, size_t sizeInWords)const {
         if (! m_validDDS) {
             return MakeEmptyWStr(wcstr,sizeInWords);
         }
-
-        wchar_t*    dst                 = wcstr;
-        const auto  flags            = m_header.dx7.ddspf.dwFlags;
-        bool        writeVerticalBar = false;
-        for (const auto &item : sg_ddpf_tables) {
-            if (! (item.flag & flags)) {
-                continue;
-            }
-
-            if (writeVerticalBar)[[likely]] {
-                *dst = L'|';
-                --sizeInWords;
-                ++dst;
-            } else{
-                writeVerticalBar = true;
-            }
-            if (wcscpy_s(dst, sizeInWords, item.str) != 0) {
-                //error
-                return MakeEmptyWStr(wcstr,sizeInWords);
-            }
-
-            dst += item.strlen;
-            if ((item.strlen) <= sizeInWords) {
-                sizeInWords -= item.strlen;
-            }
-            else {
-                //書き込み先バッファが足りない
-                return MakeEmptyWStr(wcstr,sizeInWords);
-            }
-        }
-        //+1 == '\0'のぶん
-        return std::distance(wcstr, dst) + 1;
+        return MakeFlagsWStr(wcstr, sizeInWords, GetDDPFFlags(), sg_ddpf_tables, _countof(sg_ddpf_tables));
     }
+
 
 
 }; /*namespace dds_loadert*/

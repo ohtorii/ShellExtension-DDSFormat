@@ -55,8 +55,10 @@ namespace dds_loader {
             DDS10_DIMENSION_3D = 4,
         };*/
 
-        enum {
+        enum class MemberSize : size_t{
             FourCCSize      = sizeof(Loader::DDS_PIXELFORMAT_DX7::dwFourCC),
+            CapsSize        = sizeof(Loader::DDS_HEADER_DX7::dwCaps),
+            Caps2Size       = sizeof(Loader::DDS_HEADER_DX7::dwCaps2),
             Reserved1Size   = sizeof(DDS_HEADER_DX7::dwReserved1),
         };
     public:
@@ -69,22 +71,28 @@ namespace dds_loader {
 
         enum class MinimumBufferCount :size_t {
             //+1 == '\0'のぶん
-            FourCCAsciiDump = FourCCSize + 1,
+            FourCCAsciiDump = static_cast<size_t>(MemberSize::FourCCSize) + 1,
 
             //1Byteは最大3文字へ変換される
             //  0xFFA1 -> L"FF A1\0"
             //  0xFF   -> l"FF\0"
-            FourCCHexDump = FourCCSize * 3 + 1,
+            FourCCHexDump = static_cast<size_t>(MemberSize::FourCCSize) * 3 + 1,
 
             //+1 == '\0'のぶん
-            Reserved1 = Reserved1Size + 1,
+            Caps    = std::char_traits<wchar_t>::length(L"ALPHA|COMPLEX|TEXTURE|MIPMAP|") + 1,
+
+            //+1 == '\0'のぶん
+            Caps2   = std::char_traits<wchar_t>::length(L"CUBEMAP|POSITIVE_X|NEGATIVE_X|POSITIVE_Y|NEGATIVE_Y|POSITIVE_Z|NEGATIVE_Z|VOLUME|")+1,
+
+            //+1 == '\0'のぶん
+            Reserved1 = static_cast<size_t>(MemberSize::Reserved1Size) + 1,
 
             //1Byteは最大3文字へ変換される
             //  0xFFA1 -> L"FF A1\0"
             //  0xFF   -> l"FF\0"
-            Reserved1HexDump = Reserved1Size * 3 + 1,
+            Reserved1HexDump = static_cast<size_t>(MemberSize::Reserved1Size) * 3 + 1,
             //+1 == '\0'のぶん
-            Reserved1AsciiDump = Reserved1Size + 1,
+            Reserved1AsciiDump = static_cast<size_t>(MemberSize::Reserved1Size) + 1,
 
             PixelFormat = std::char_traits<wchar_t>::length(L"ALPHAPIXELS|ALPHA|FOURCC|PALETTEINDEXED4|PALETTEINDEXED8|RGB|LUMINANCE|BUMPDUDV|") + 1,
         };
@@ -95,7 +103,7 @@ namespace dds_loader {
         /// (Ex. 2) {0x00, 0x00, 0x00, 0x24}  //<--A16B16G16R16
         /// </summary>
         /// <returns>フォーマットのバイト配列</returns>
-        std::array<BYTE, FourCCSize> GetFourCC()const;
+        std::array<BYTE, static_cast<size_t>(MemberSize::FourCCSize)> GetFourCC()const;
 
         /// <summary>
         /// FourCCをワイド文字列で受け取る
@@ -128,7 +136,7 @@ namespace dds_loader {
         /// </summary>
         /// <returns></returns>
         DWORD GetDepth()const;
-        
+
         /// <summary>
         /// DDS_PIXELFORMAT_DX7::dwRGBBitCountを取得する
         /// </summary>
@@ -136,10 +144,38 @@ namespace dds_loader {
         DWORD GetRGBBitCount()const;
 
         /// <summary>
+        /// DDS_HEADER_DX7::dwCapsを取得する
+        /// </summary>
+        /// <returns></returns>
+        DWORD GetCaps()const;
+
+        /// <summary>
+        /// DDS_HEADER_DX7::dwCapsを文字列で取得する
+        /// </summary>
+        /// <param name="wcstr">書き込み先</param>
+        /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::Caps)</param>
+        /// <returns>変換された文字数</returns>
+        DWORD GetCapsAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+
+        /// <summary>
+        /// DDS_HEADER_DX7::dwCaps2を取得する
+        /// </summary>
+        /// <returns></returns>
+        DWORD GetCaps2()const;
+
+        /// <summary>
+        /// DDS_HEADER_DX7::dwCaps2を文字列で取得する
+        /// </summary>
+        /// /// <param name="wcstr">書き込み先</param>
+        /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::Caps)</param>
+        /// <returns>変換された文字数</returns>
+        DWORD GetCaps2AsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+
+        /// <summary>
         /// dwReserved1をバイト配列で得る
         /// </summary>
         /// <returns></returns>
-        std::array<BYTE, Reserved1Size> GetReserved1()const;
+        std::array<BYTE, static_cast<size_t>(MemberSize::Reserved1Size)> GetReserved1()const;
 
         /// <summary>
         /// dwReserved1をワイド文字列で得る
@@ -166,13 +202,19 @@ namespace dds_loader {
         size_t GetReserved1AsAsciiDump(wchar_t* wcstr, size_t sizeInWords)const;
 
         /// <summary>
+        /// DDS_PIXELFORMAT_DX7::dwFlagsを取得する
+        /// </summary>
+        /// <returns></returns>
+        size_t GetDDPFFlags()const;
+
+        /// <summary>
         /// DDS_PIXELFORMAT_DX7::dwFlagsを文字列で取得する
         /// (Ex.) "ALPHA|FOURCC"
         /// </summary>
         /// <param name="wcstr">書き込み先</param>
         /// <param name="sizeInWords">書き込み先の文字数（最低でもPixelFormat）</param>
         /// <returns>書き込んだ文字数</returns>
-        size_t GetDDPFFlags(wchar_t* wcstr, size_t sizeInWords)const;
+        size_t GetDDPFFlagsAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
 
     private:
         void Initialize();
