@@ -518,7 +518,7 @@ namespace dds_loader {
         return MakeEmptyWStr(wcstr,sizeInWords);
     }
 
-    size_t Loader::GetDDPFFlags() const{
+    DWORD Loader::GetDDPFFlags() const{
         return m_header.dx7.ddspf.dwFlags;
     }
 

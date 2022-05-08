@@ -205,7 +205,7 @@ namespace dds_loader {
         /// DDS_PIXELFORMAT_DX7::dwFlagsを取得する
         /// </summary>
         /// <returns></returns>
-        size_t GetDDPFFlags()const;
+        DWORD GetDDPFFlags()const;
 
         /// <summary>
         /// DDS_PIXELFORMAT_DX7::dwFlagsを文字列で取得する
