@@ -460,7 +460,7 @@ namespace dds_loader {
         return m_header.dx7.dwCaps;
     }
 
-    DWORD Loader::GetCapsAsWChar(wchar_t* wcstr, size_t sizeInWords)const {
+    size_t Loader::GetCapsAsWChar(wchar_t* wcstr, size_t sizeInWords)const {
         if (! m_validDDS) {
             return MakeEmptyWStr(wcstr,sizeInWords);
         }
@@ -471,7 +471,7 @@ namespace dds_loader {
         return m_header.dx7.dwCaps2;
     }
 
-    DWORD Loader::GetCaps2AsWChar(wchar_t* wcstr, size_t sizeInWords)const {
+    size_t Loader::GetCaps2AsWChar(wchar_t* wcstr, size_t sizeInWords)const {
         if (! m_validDDS) {
             return MakeEmptyWStr(wcstr,sizeInWords);
         }

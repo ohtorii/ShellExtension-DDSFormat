@@ -11,10 +11,10 @@ namespace UnitTest
     {
         Loader m_LoaderDXT1;
     public:
-        UnitTest() {
-            m_LoaderDXT1.Load(MAKE_ABS_PATH("DXT1.dds"));
-        }
 
+        UnitTest() {
+            Assert::AreEqual(m_LoaderDXT1.Load(MAKE_ABS_PATH("DXT1.dds")),true);
+        }
         TEST_METHOD(GetFourCC) {
             {
                 const auto format = m_LoaderDXT1.GetFourCC();
@@ -94,13 +94,27 @@ namespace UnitTest
         TEST_METHOD(GetRGBBitCount) {
             Assert::AreEqual(m_LoaderDXT1.GetRGBBitCount(),static_cast<DWORD>(0));
         }
-        TEST_METHOD(GetDDPFFlags) {
-            Loader m_LoaderDXT1;
-            Assert::AreEqual(m_LoaderDXT1.Load(MAKE_ABS_PATH("DDPixelFormat_0xFFFFFFFF.dds")), true);
+        TEST_METHOD(GetDDPFFlagsAsWChar) {
+            Loader m_Loader;
+            Assert::AreEqual(m_Loader.Load(MAKE_ABS_PATH("DDPixelFormat_0xFFFFFFFF.dds")), true);
             std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::PixelFormat)>      szField;
-            const auto writeCount = m_LoaderDXT1.GetDDPFFlags(szField.data(), szField.size());
+            const auto writeCount = m_Loader.GetDDPFFlagsAsWChar(szField.data(), szField.size());
             Assert::AreEqual(writeCount,static_cast<size_t>(0x50));
             //Assert::AreEqual(wcscmp(szField.data(),L"RGB")==0, true);
+        }
+        TEST_METHOD(GetCapsAsWStr) {
+            Loader Loader;
+            Assert::AreEqual(Loader.Load(MAKE_ABS_PATH("dwCaps_0xFFFFFFFF.dds")), true);
+            std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::Caps)>      szField;
+            const auto writeCount = Loader.GetCapsAsWChar(szField.data(), szField.size());
+            Assert::AreEqual(writeCount,static_cast<size_t>(0x1D));
+        }
+        TEST_METHOD(GetCaps2AsWStr) {
+            Loader Loader;
+            Assert::AreEqual(Loader.Load(MAKE_ABS_PATH("dwCaps2_0xFFFFFFFF.dds")), true);
+            std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::Caps2)>      szField;
+            const auto writeCount = Loader.GetCaps2AsWChar(szField.data(), szField.size());
+            Assert::AreEqual(writeCount,static_cast<size_t>(0x51));
         }
     };
 }

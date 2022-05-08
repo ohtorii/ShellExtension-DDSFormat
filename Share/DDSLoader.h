@@ -155,7 +155,7 @@ namespace dds_loader {
         /// <param name="wcstr">書き込み先</param>
         /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::Caps)</param>
         /// <returns>変換された文字数</returns>
-        DWORD GetCapsAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+        size_t GetCapsAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
 
         /// <summary>
         /// DDS_HEADER_DX7::dwCaps2を取得する
@@ -169,7 +169,7 @@ namespace dds_loader {
         /// /// <param name="wcstr">書き込み先</param>
         /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::Caps)</param>
         /// <returns>変換された文字数</returns>
-        DWORD GetCaps2AsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+        size_t GetCaps2AsWChar(wchar_t* wcstr, size_t sizeInWords)const;
 
         /// <summary>
         /// dwReserved1をバイト配列で得る
