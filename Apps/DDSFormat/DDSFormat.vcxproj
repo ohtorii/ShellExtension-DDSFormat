@@ -125,7 +125,6 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>DLLExport.def</ModuleDefinitionFile>
-      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
     <Midl>
       <HeaderFileName />
@@ -166,7 +165,6 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>DLLExport.def</ModuleDefinitionFile>
-      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
     <Midl>
       <HeaderFileName>
@@ -205,7 +203,6 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>DLLExport.def</ModuleDefinitionFile>
-      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
     <Midl>
       <HeaderFileName />
@@ -243,7 +240,6 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>DLLExport.def</ModuleDefinitionFile>
-      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
     <Midl>
       <HeaderFileName>
