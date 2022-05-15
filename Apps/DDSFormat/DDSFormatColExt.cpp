@@ -101,15 +101,12 @@ namespace dds_format {
             return InitializeAsString(psci, dwIndex, 16, _T("Reserved1(Hex)"), _T("DDS reserved1 area as hex dump"));
 
         default:
-            assert(false);
             return S_FALSE;
         }
     }
 
     STDMETHODIMP CDDSFormatColExt::GetItemData(LPCSHCOLUMNID pscid, LPCSHCOLUMNDATA pscd, VARIANT* pvarData)
     {
-        USES_CONVERSION;
-
         if (pscid->fmtid != CLSID_DDSFormatColExt)
         {
             return S_FALSE;
@@ -117,62 +114,54 @@ namespace dds_format {
         if (static_cast<DWORD>(Column::Number) <= pscid->pid) {
             return S_FALSE;
         }
-
+        if (0 != _wcsicmp(pscd->pwszExt, L".dds")) {
+            return S_FALSE;
+        }
         if (pscd->dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_OFFLINE)) {
             return S_FALSE;
         }
 
-        if (0 != _wcsicmp(pscd->pwszExt, L".dds")) {
+        dds_loader::Loader loaderDXT1;
+        if (loaderDXT1.Load(pscd->wszFile) == false)
+        {
             return S_FALSE;
         }
-
+        switch (pscid->pid)
         {
-             using namespace std::placeholders;
+        case static_cast<DWORD>(Column::ForCCAsciiDump):
+            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetFourCCAsAsciiDump, pvarData);
 
-            dds_loader::Loader m_LoaderDXT1;
-            if (m_LoaderDXT1.Load(pscd->wszFile)) {
-                switch (pscid->pid)
-                {
-                case static_cast<DWORD>(Column::ForCCAsciiDump):
-                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetFourCCAsAsciiDump, pvarData);
+        case static_cast<DWORD>(Column::ForCCHexDump):
+            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetFourCCAsHexDump, pvarData);
 
-                case static_cast<DWORD>(Column::ForCCHexDump):
-                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetFourCCAsHexDump, pvarData);
+        case static_cast<DWORD>(Column::PixelFormat):
+            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetDDPFFlagsAsWChar, pvarData);
 
-                case static_cast<DWORD>(Column::PixelFormat):
-                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetDDPFFlagsAsWChar, pvarData);
+        case static_cast<DWORD>(Column::Depth):
+            return MakeInt(&loaderDXT1, &dds_loader::Loader::GetDepth, pvarData);
 
-                case static_cast<DWORD>(Column::Depth):
-                    return MakeInt(&m_LoaderDXT1, &dds_loader::Loader::GetDepth, pvarData);
+        case static_cast<DWORD>(Column::RGBBitCount):
+            return MakeInt(&loaderDXT1, &dds_loader::Loader::GetRGBBitCount, pvarData);
 
-                case static_cast<DWORD>(Column::RGBBitCount):
-                    return MakeInt(&m_LoaderDXT1, &dds_loader::Loader::GetRGBBitCount, pvarData);
+        case static_cast<DWORD>(Column::Caps):
+            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetCapsAsWChar, pvarData);
 
-                case static_cast<DWORD>(Column::Caps):
-                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetCapsAsWChar, pvarData);
+        case static_cast<DWORD>(Column::Caps2):
+            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetCaps2AsWChar, pvarData);
 
-                case static_cast<DWORD>(Column::Caps2):
-                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetCaps2AsWChar, pvarData);
+        case static_cast<DWORD>(Column::MipMapCount):
+            return MakeInt(&loaderDXT1, &dds_loader::Loader::GetMipMapCount, pvarData);
 
-                case static_cast<DWORD>(Column::MipMapCount):
-                    return MakeInt(&m_LoaderDXT1, &dds_loader::Loader::GetMipMapCount, pvarData);
+        case static_cast<DWORD>(Column::Reserved1AsAsciiDump):
+            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetReserved1AsAsciiDump, pvarData);
 
-                case static_cast<DWORD>(Column::Reserved1AsAsciiDump):
-                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetReserved1AsAsciiDump, pvarData);
+        case static_cast<DWORD>(Column::Reserved1AsHexDump):
+            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetReserved1AsHexDump, pvarData);
 
-                case static_cast<DWORD>(Column::Reserved1AsHexDump):
-                    return MakeWStr(&m_LoaderDXT1, &dds_loader::Loader::GetReserved1AsHexDump, pvarData);
-
-                [[unlikely]]default:
-                    assert(false);
-                    return S_FALSE;
-                }
-            }
-            else {
-                //pass
-            }
+        [[unlikely]]default:
+            assert(false);
+            return S_FALSE;
         }
-
         return S_FALSE;
     }
 
