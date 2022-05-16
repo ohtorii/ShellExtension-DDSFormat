@@ -162,7 +162,6 @@ namespace dds_format {
             assert(false);
             return S_FALSE;
         }
-        return S_FALSE;
     }
 
 }; /*namespace dds_format*/
