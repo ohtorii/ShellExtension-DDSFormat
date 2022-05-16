@@ -44,7 +44,7 @@ namespace dds_loader {
             DWORD    dwArraySize;
             DWORD    dwMiscFlag2;
         };
-        struct DDS_HEADER {
+        struct alignas(16) DDS_HEADER {
             DDS_HEADER_DX7      dx7;
             DDS_HEADER_DX10     dx10;
         };
@@ -220,7 +220,7 @@ namespace dds_loader {
         void Initialize();
         DDS_HEADER  m_header;
         bool        m_validDDS;
-        bool        m_isDX10;;
+        bool        m_isDX10;
     };
 };
 
