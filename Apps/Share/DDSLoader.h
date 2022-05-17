@@ -44,7 +44,7 @@ namespace dds_loader {
             DWORD    dwArraySize;
             DWORD    dwMiscFlag2;
         };
-        struct alignas(16) DDS_HEADER {
+        struct DDS_HEADER {
             DDS_HEADER_DX7      dx7;
             DDS_HEADER_DX10     dx10;
         };
@@ -54,7 +54,6 @@ namespace dds_loader {
             DDS10_DIMENSION_2D = 3,
             DDS10_DIMENSION_3D = 4,
         };*/
-
         enum class MemberSize : size_t{
             FourCCSize      = sizeof(Loader::DDS_PIXELFORMAT_DX7::dwFourCC),
             CapsSize        = sizeof(Loader::DDS_HEADER_DX7::dwCaps),
@@ -62,6 +61,9 @@ namespace dds_loader {
             Reserved1Size   = sizeof(DDS_HEADER_DX7::dwReserved1),
         };
     public:
+        static constexpr size_t GetDDSHeaderDx7Size() { return sizeof(DDS_HEADER_DX7); }
+        static constexpr size_t GetHHSHeaderSize() { return sizeof(DDS_HEADER); }
+
         Loader(const Loader&) = delete;
         Loader& operator=(const Loader&) = delete;
 
@@ -218,7 +220,8 @@ namespace dds_loader {
 
     private:
         void Initialize();
-        DDS_HEADER  m_header;
+
+        alignas(16) DDS_HEADER  m_header;
         bool        m_validDDS;
         bool        m_isDX10;
     };
