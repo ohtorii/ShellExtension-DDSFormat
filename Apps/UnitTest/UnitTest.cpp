@@ -94,6 +94,12 @@ namespace UnitTest
         TEST_METHOD(GetRGBBitCount) {
             Assert::AreEqual(m_LoaderDXT1.GetRGBBitCount(),static_cast<DWORD>(0));
         }
+        TEST_METHOD(GetRBitMask) {
+            wchar_t buf[static_cast<size_t>(Loader::MinimumBufferCount::DWordAsHex)];
+            const auto writeCount=m_LoaderDXT1.GetRBitMaskAsWChar(buf,_countof(buf));
+            Assert::AreEqual(writeCount,static_cast<size_t>(Loader::MinimumBufferCount::DWordAsHex));
+            Assert::AreEqual(wcscmp(buf,L"0x00000000")==0, true);
+        }
         TEST_METHOD(GetDDPFFlagsAsWChar) {
             Loader m_Loader;
             Assert::AreEqual(m_Loader.Load(MAKE_ABS_PATH("DDPixelFormat_0xFFFFFFFF.dds")), true);

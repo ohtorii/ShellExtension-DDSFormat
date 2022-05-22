@@ -9,11 +9,6 @@ namespace UnitTest
 {
     TEST_CLASS(StructTest)
     {
-        TEST_METHOD(SizeOf)
-        {
-            Assert::AreEqual(Loader::GetDDSHeaderDx7Size(), (size_t)128);
-            Assert::AreEqual(Loader::GetHHSHeaderSize(), (size_t)128 + 20);
-        }
         TEST_METHOD(AlignAs16_Stack)
         {
             Loader l1;

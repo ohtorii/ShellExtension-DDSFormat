@@ -14,11 +14,19 @@ namespace {
         PixelFormat,
         Depth,
         RGBBitCount,
+        RBitMask,
+        GBitMask,
+        BBitMask,
+        ABitMask,
         Caps,
         Caps2,
         MipMapCount,
         Reserved1AsAsciiDump,
         Reserved1AsHexDump,
+        Dx10FormatAsDecimal,
+        Dx10FormatAsChar,
+
+
         Number,
     };
 
@@ -32,6 +40,10 @@ namespace {
         wcsncpy_s(psci->wszTitle, _countof(psci->wszTitle), title, _TRUNCATE);
         wcsncpy_s(psci->wszDescription, _countof(psci->wszDescription), description, _TRUNCATE);
         return S_OK;
+    }
+
+    HRESULT InitializeAsHex(SHCOLUMNINFO* psci, DWORD pid, UINT chars, const wchar_t* title, const wchar_t* description) {
+        return InitializeAsString(psci, pid, chars, title, description);
     }
 
     HRESULT InitializeAsInt(SHCOLUMNINFO* psci, DWORD pid, UINT chars, const wchar_t* title, const wchar_t* description) {
@@ -55,7 +67,7 @@ namespace {
         return vData.Detach(pvarData);
     }
 
-    HRESULT MakeInt(dds_loader::Loader*loader, std::function<DWORD(dds_loader::Loader*)> method, VARIANT* pvarData) {
+    HRESULT MakeDWORDAsDecimal(dds_loader::Loader*loader, std::function<DWORD(dds_loader::Loader*)> method, VARIANT* pvarData) {
         CComVariant vData(static_cast<int>(method(loader)));
         return vData.Detach(pvarData);
     }
@@ -83,7 +95,19 @@ namespace dds_format {
             return InitializeAsInt(psci, dwIndex, 2, _T("Depth"), _T("Depth of DDS"));
 
         case static_cast<DWORD>(Column::RGBBitCount):
-            return InitializeAsInt(psci, dwIndex, 2, _T("RGBBitCount"), _T("RGBBitCount of DDS"));
+            return InitializeAsString(psci, dwIndex, 10, _T("RGBBitCount"), _T("RGBBitCount of DDS"));
+
+        case static_cast<DWORD>(Column::RBitMask):
+            return InitializeAsHex(psci, dwIndex, 10, _T("RedBitMask"), _T("Red bit mask of DDS"));
+
+        case static_cast<DWORD>(Column::GBitMask):
+            return InitializeAsHex(psci, dwIndex, 10, _T("GreenBitMask"), _T("Green bit mask of DDS"));
+
+        case static_cast<DWORD>(Column::BBitMask):
+            return InitializeAsHex(psci, dwIndex, 2, _T("BlueBitMask"), _T("Blue bit mask of DDS"));
+
+        case static_cast<DWORD>(Column::ABitMask):
+            return InitializeAsHex(psci, dwIndex, 10, _T("AlphabitMask"), _T("Alpha bit mask of DDS"));
 
         case static_cast<DWORD>(Column::Caps):
             return InitializeAsString(psci, dwIndex, 10, _T("Caps"), _T("Caps of DDS"));
@@ -92,13 +116,18 @@ namespace dds_format {
             return InitializeAsString(psci, dwIndex, 10, _T("Caps2"), _T("Caps2 of DDS"));
 
         case static_cast<DWORD>(Column::MipMapCount):
-            return InitializeAsInt(psci, dwIndex, 2, _T("MipMapCount"), _T("MipMapCount of DDS"));
+            return InitializeAsInt(psci, dwIndex, 2, _T("MipMapCount"), _T("Mipmap count of DDS"));
 
         case static_cast<DWORD>(Column::Reserved1AsAsciiDump):
             return InitializeAsString(psci, dwIndex, 16, _T("Reserved1(Ascii)"), _T("DDS reserved1 area as Ascii dump"));
 
         case static_cast<DWORD>(Column::Reserved1AsHexDump):
             return InitializeAsString(psci, dwIndex, 16, _T("Reserved1(Hex)"), _T("DDS reserved1 area as hex dump"));
+        
+        case static_cast<DWORD>(Column::Dx10FormatAsDecimal):
+
+        case static_cast<DWORD>(Column::Dx10FormatAsChar):
+            return InitializeAsString(psci, dwIndex, 16, _T("DX10Format(Hex)"), _T("DDS reserved1 area as hex dump"));
 
         default:
             return S_FALSE;
@@ -138,10 +167,22 @@ namespace dds_format {
             return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetDDPFFlagsAsWChar, pvarData);
 
         case static_cast<DWORD>(Column::Depth):
-            return MakeInt(&loaderDXT1, &dds_loader::Loader::GetDepth, pvarData);
+            return MakeDWORDAsDecimal(&loaderDXT1, &dds_loader::Loader::GetDepth, pvarData);
 
         case static_cast<DWORD>(Column::RGBBitCount):
-            return MakeInt(&loaderDXT1, &dds_loader::Loader::GetRGBBitCount, pvarData);
+            return MakeDWORDAsDecimal(&loaderDXT1, &dds_loader::Loader::GetRGBBitCount, pvarData);
+
+        case static_cast<DWORD>(Column::RBitMask):
+            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetRBitMaskAsWChar, pvarData);
+
+        case static_cast<DWORD>(Column::GBitMask):
+            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetGBitMaskAsWChar, pvarData);
+
+        case static_cast<DWORD>(Column::BBitMask):
+            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetBBitMaskAsWChar, pvarData);
+
+        case static_cast<DWORD>(Column::ABitMask):
+            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetABitMaskAsWChar, pvarData);
 
         case static_cast<DWORD>(Column::Caps):
             return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetCapsAsWChar, pvarData);
@@ -150,7 +191,7 @@ namespace dds_format {
             return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetCaps2AsWChar, pvarData);
 
         case static_cast<DWORD>(Column::MipMapCount):
-            return MakeInt(&loaderDXT1, &dds_loader::Loader::GetMipMapCount, pvarData);
+            return MakeDWORDAsDecimal(&loaderDXT1, &dds_loader::Loader::GetMipMapCount, pvarData);
 
         case static_cast<DWORD>(Column::Reserved1AsAsciiDump):
             return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetReserved1AsAsciiDump, pvarData);

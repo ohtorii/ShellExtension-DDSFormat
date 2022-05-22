@@ -15,8 +15,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)DDSLoader.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)internal\DDSFormatFlags.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)internal\DDSFormatUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)DDSLoader.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)internal\DDSFormatFlags.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)internal\DDSFormatUtils.cpp" />
   </ItemGroup>
 </Project>

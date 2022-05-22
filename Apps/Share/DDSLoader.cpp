@@ -1,358 +1,12 @@
 ﻿#include "DDSLoader.h"
-#include <cstdio>
-#include <cassert>
-#include <string>
+#include "internal/DDSFormatUtils.h"
+#include "internal/DDSFormatFlags.h"
 
+
+using namespace dds_loader_utils;
 
 namespace {
     constexpr DWORD SIGNATURE = 0x20534444;//"DDS " (Little endian)
-
-    namespace dds_flags {
-        constexpr DWORD DDPF_ALPHAPIXELS = 0x00000001;
-        constexpr DWORD DDPF_ALPHA = 0x00000002;
-        constexpr DWORD DDPF_FOURCC = 0x00000004;
-        constexpr DWORD DDPF_PALETTEINDEXED4 = 0x00000008;
-        constexpr DWORD DDPF_PALETTEINDEXED8 = 0x00000020;
-        constexpr DWORD DDPF_RGB = 0x00000040;
-        constexpr DWORD DDPF_LUMINANCE = 0x00020000;
-        constexpr DWORD DDPF_BUMPDUDV = 0x00080000;
-
-        constexpr DWORD DDSCAPS_ALPHA = 0x00000002;
-        constexpr DWORD DDSCAPS_COMPLEX = 0x00000008;
-        constexpr DWORD DDSCAPS_TEXTURE = 0x00001000;
-        constexpr DWORD DDSCAPS_MIPMAP = 0x00400000;
-
-        constexpr DWORD DDSCAPS2_CUBEMAP	= 0x00000200;
-        constexpr DWORD DDSCAPS2_CUBEMAP_POSITIVEX	= 0x00000400;
-        constexpr DWORD DDSCAPS2_CUBEMAP_NEGATIVEX	= 0x00000800;
-        constexpr DWORD DDSCAPS2_CUBEMAP_POSITIVEY	= 0x00001000;
-        constexpr DWORD DDSCAPS2_CUBEMAP_NEGATIVEY	= 0x00002000;
-        constexpr DWORD DDSCAPS2_CUBEMAP_POSITIVEZ	= 0x00004000;
-        constexpr DWORD DDSCAPS2_CUBEMAP_NEGATIVEZ	= 0x00008000;
-        constexpr DWORD DDSCAPS2_VOLUME	= 0x00400000;
-    };
-
-    namespace {
-        struct FlagTableItem {
-            const DWORD flag;
-            const wchar_t* const str;
-            const size_t strlen;
-        };
-
-        consteval size_t PixelFormatMinimumBufferCount(const FlagTableItem* const tables, size_t const tableCount) {
-                //1 == '\0'のぶん
-                size_t result = 1;
-                for (size_t i = 0; i < tableCount; ++i) {
-                    //1=='|'のぶん
-                    result += tables[i].strlen + 1;
-                }
-                return result;
-            }
-
-        namespace {
-            #define MAKE_DDPF_ITEM(flag) dds_flags::DDPF_##flag, L""#flag, std::char_traits<wchar_t>::length(L""#flag)
-            constexpr FlagTableItem sg_ddpf_tables[] = {
-                {MAKE_DDPF_ITEM(ALPHAPIXELS)},
-                {MAKE_DDPF_ITEM(ALPHA)},
-                {MAKE_DDPF_ITEM(FOURCC)},
-                {MAKE_DDPF_ITEM(PALETTEINDEXED4)},
-                {MAKE_DDPF_ITEM(PALETTEINDEXED8)},
-                {MAKE_DDPF_ITEM(RGB)},
-                {MAKE_DDPF_ITEM(LUMINANCE)},
-                {MAKE_DDPF_ITEM(BUMPDUDV)},
-            };
-            static_assert(PixelFormatMinimumBufferCount(sg_ddpf_tables, _countof(sg_ddpf_tables)) == static_cast<size_t>(dds_loader::Loader::MinimumBufferCount::PixelFormat));
-        };
-
-        namespace {
-            #define MAKE_DDSCAPS_ITEM(flag) DDSCAPS_##flag, L""#flag, std::char_traits<wchar_t>::length(L""#flag)
-
-            constexpr DWORD DDSCAPS_ALPHA	=0x00000002;
-            constexpr DWORD DDSCAPS_COMPLEX	=0x00000008;
-            constexpr DWORD DDSCAPS_TEXTURE	=0x00001000;
-            constexpr DWORD DDSCAPS_MIPMAP	=0x00400000;
-
-            constexpr FlagTableItem sg_caps_tables[] = {
-                {MAKE_DDSCAPS_ITEM(ALPHA)},
-                {MAKE_DDSCAPS_ITEM(COMPLEX)},
-                {MAKE_DDSCAPS_ITEM(TEXTURE)},
-                {MAKE_DDSCAPS_ITEM(MIPMAP)},
-            };
-
-            static_assert(PixelFormatMinimumBufferCount(sg_caps_tables, _countof(sg_caps_tables)) == static_cast<size_t>(dds_loader::Loader::MinimumBufferCount::Caps));
-        };
-
-        namespace {
-            constexpr DWORD DDSCAPS2_CUBEMAP	=0x00000200;
-            constexpr DWORD DDSCAPS2_POSITIVE_X	=0x00000400;
-            constexpr DWORD DDSCAPS2_NEGATIVE_X	=0x00000800;
-            constexpr DWORD DDSCAPS2_POSITIVE_Y	=0x00001000;
-            constexpr DWORD DDSCAPS2_NEGATIVE_Y	=0x00002000;
-            constexpr DWORD DDSCAPS2_POSITIVE_Z	=0x00004000;
-            constexpr DWORD DDSCAPS2_NEGATIVE_Z	=0x00008000;
-            constexpr DWORD DDSCAPS2_VOLUME	    =0x00400000;
-
-            #define MAKE_DDSCAPS2_ITEM(flag) DDSCAPS2_##flag, L""#flag, std::char_traits<wchar_t>::length(L""#flag)
-            constexpr FlagTableItem sg_caps2_tables[] = {
-                {MAKE_DDSCAPS2_ITEM(CUBEMAP)},
-                {MAKE_DDSCAPS2_ITEM(POSITIVE_X)},
-                {MAKE_DDSCAPS2_ITEM(NEGATIVE_X)},
-                {MAKE_DDSCAPS2_ITEM(POSITIVE_Y)},
-                {MAKE_DDSCAPS2_ITEM(NEGATIVE_Y)},
-                {MAKE_DDSCAPS2_ITEM(POSITIVE_Z)},
-                {MAKE_DDSCAPS2_ITEM(NEGATIVE_Z)},
-                {MAKE_DDSCAPS2_ITEM(VOLUME)},
-            };
-
-            static_assert(PixelFormatMinimumBufferCount(sg_caps2_tables, _countof(sg_caps2_tables)) == static_cast<size_t>(dds_loader::Loader::MinimumBufferCount::Caps2));
-        };
-    };
-
-
-    void DWordToByteArray(BYTE dst[4], const DWORD src) {
-        dst[0] = static_cast<BYTE>((src & 0x000000ff) >> 0);
-        dst[1] = static_cast<BYTE>((src & 0x0000ff00) >> 8);
-        dst[2] = static_cast<BYTE>((src & 0x00ff0000) >> 16);
-        dst[3] = static_cast<BYTE>((src & 0xff000000) >> 24);
-    }
-
-    size_t ByteArrayToWCstr(wchar_t* dst, size_t sizeInWords, const BYTE* src, size_t srcSize) {
-        static const errno_t    success = 0;
-        size_t                  returnValue = 0;
-
-        if (mbstowcs_s(&returnValue, dst, sizeInWords, reinterpret_cast<const char*>(src), srcSize) == success) {
-            return returnValue;
-        }
-        if (0 < sizeInWords) {
-            dst[0] = '\0';
-            return 1;
-        }
-        return 0;
-    }
-
-    //(Memo)  0x44 -> 'D'
-    constexpr size_t sg_asciiLength = 1;
-    //(Memo)  0xFF -> "FF "
-    constexpr size_t sg_hexLength = 3;
-
-    /// <summary>
-    /// コンバート可能なAscii文字数を計算する(終端の\0は考慮しない)
-    /// </summary>
-    /// (Ex 1.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
-    ///         dstCount = 4;
-    ///         return     4;
-    ///
-    /// (Ex 2.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
-    ///         dstCount = 4+1;
-    ///         return     4;
-    ///
-    /// (Ex 3.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
-    ///         dstCount = 1;
-    ///         return     1;
-    /// <param name="dstCount"></param>
-    /// <param name="srcCount"></param>
-    /// <returns></returns>
-    size_t CaclConvertibleAsciiCount(size_t dstCount, size_t srcCount) {
-        if ((dstCount < sg_asciiLength) || (srcCount == 0)) {
-            return 0;
-        }
-        //srcからAscii文字列へ変換後の文字数
-        //+1 == '\0'のぶん
-        const auto dstConvertedMaxLen = srcCount * sg_asciiLength + 1;
-        if (dstConvertedMaxLen <= dstCount) {
-            return srcCount;
-        }
-        return dstCount / sg_asciiLength;
-    }
-
-    bool IsPrintableChar(int c) {
-        if ((c < ' ') || ('~' < c)) {
-            return false;
-        }
-        return true;
-    }
-
-    /// <summary>
-    /// BYTE配列をASCII文字列へ変換する
-    /// (Ex.) src   = [0x44,0x44,0x53,0x20]
-    ///       dst   = L"DDS \0"
-    ///      return = 5
-    /// </summary>
-    /// <param name="dst"></param>
-    /// <param name="dstCount"></param>
-    /// <param name="src"></param>
-    /// <param name="srcCount"></param>
-    /// <returns></returns>
-    size_t ConvertByteArrayToWCstrAscii(wchar_t* const dst, const size_t dstCount, const BYTE* const src, const size_t srcCount) {
-        assert(dst != nullptr);
-        assert(src != nullptr);
-
-        const size_t convertAsciiLength = CaclConvertibleAsciiCount(dstCount, srcCount);
-        for (size_t srcIndex = 0, dstIndex = 0; srcIndex < convertAsciiLength; ++srcIndex, dstIndex += sg_asciiLength) {
-            const int srcValue = static_cast<unsigned int>(src[srcIndex]);
-
-            if (IsPrintableChar(srcValue)) {
-                //(Memo) +1 == '\0'
-                wchar_t dstTemp[sg_asciiLength + 1];
-
-                if (_snwprintf_s(dstTemp, _countof(dstTemp), _countof(dstTemp), L"%C", srcValue) == sg_asciiLength) {
-                    //success
-                    dst[dstIndex] = dstTemp[0];
-                }
-                else {
-                    //error
-                    dst[dstIndex] = L'.';
-                }
-            }
-            else {
-                dst[dstIndex] = L'.';
-            }
-        }
-
-        //バッファを0終端させる
-        size_t terminateIndex = 0;
-        if ((convertAsciiLength * sg_asciiLength) < dstCount) {
-            terminateIndex = convertAsciiLength * sg_asciiLength;
-        }
-        else {
-            terminateIndex = dstCount - 1;
-        }
-        dst[terminateIndex] = L'\0';
-
-        const size_t writeCount = terminateIndex + 1;
-        return writeCount;
-    }
-
-    /// <summary>
-    /// コンバート可能なAscii文字数を計算する(終端の\0は考慮しない)
-    /// (Ex 1.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
-    ///         dstCount = 12+1;
-    ///         return     4;
-    ///
-    /// (Ex 2.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
-    ///         dstCount = 12;
-    ///         return     4;
-    ///
-    /// (Ex 3.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
-    ///         dstCount = 3;
-    ///         return     1;
-    ///
-    /// (Ex 4.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
-    ///         dstCount = 2;
-    ///         return     0;
-    /// </summary>
-    /// <param name="dstCount"></param>
-    /// <param name="srcCount"></param>
-    /// <returns></returns>
-    size_t ConvertByteArrayToWCstr(size_t dstCount, size_t srcCount) {
-        if ((dstCount < sg_hexLength) || (srcCount == 0)) {
-            return 0;
-        }
-        //srcからhex文字列へ変換後の文字数
-        //+1 == '\0'のぶん
-        const auto dstConvertedMaxLen = srcCount * sg_hexLength + 1;
-        if (dstConvertedMaxLen <= dstCount) {
-            return srcCount;
-        }
-        return dstCount / sg_hexLength;
-    }
-    /// <summary>
-    /// BYTE配列を16進数文字列へ変換する
-    /// (Ex.) src   = [0x44,0x44,0x53,0x20]
-    ///       dst   = L"44 44 53 20\0"
-    ///      return = 12
-    /// </summary>
-    /// <param name="dst"></param>
-    /// <param name="dstSize"></param>
-    /// <param name="src"></param>
-    /// <param name="srcSize"></param>
-    /// <returns>書き込んだ文字数</returns>
-    size_t ConvertByteArrayToWCstrHex(wchar_t* const dst, const size_t dstCount, const BYTE* const src, const size_t srcCount) {
-        assert(dst != nullptr);
-        assert(src != nullptr);
-
-        const size_t convertAsciiLength = ConvertByteArrayToWCstr(dstCount, srcCount);
-        for (size_t srcIndex = 0, dstIndex = 0; srcIndex < convertAsciiLength; ++srcIndex, dstIndex += sg_hexLength) {
-            const int srcValue = static_cast<unsigned int>(src[srcIndex]);
-            //(Memo) +1 == '\0'
-            wchar_t dstTemp[sg_hexLength + 1];
-            if (_snwprintf_s(dstTemp, _countof(dstTemp), _countof(dstTemp), L"%02X ", srcValue) == sg_hexLength) {
-                //success
-                dst[dstIndex] = dstTemp[0];
-                dst[dstIndex + 1] = dstTemp[1];
-                dst[dstIndex + 2] = dstTemp[2];
-            }
-            else {
-                //error
-                dst[dstIndex] = L' ';
-                dst[dstIndex + 1] = L' ';
-                dst[dstIndex + 2] = L' ';
-            }
-        }
-
-        //バッファを0終端させる
-        size_t terminateIndex = 0;
-        if ((convertAsciiLength * sg_hexLength) < dstCount) {
-            terminateIndex = convertAsciiLength * sg_hexLength;
-        }
-        else {
-            terminateIndex = dstCount - 1;
-        }
-        dst[terminateIndex] = L'\0';
-
-        const size_t writeCount = terminateIndex + 1;
-        return writeCount;
-    }
-
-    /// <summary>
-    ///
-    /// </summary>
-    /// <param name="wcstr"></param>
-    /// <param name="sizeInWords"></param>
-    /// <returns>書き込んだ文字数</returns>
-    size_t MakeEmptyWStr(wchar_t* wcstr, size_t sizeInWords) {
-        if (sizeInWords == 0) {
-            return 0;
-        }
-        wcstr[0] = L'\0';
-        return 1;
-    }
-
-    size_t MakeFlagsWStr(wchar_t* const wcstr, size_t sizeInWords, const DWORD flags, const FlagTableItem * const tables, const size_t tablesCount)
-    {
-        wchar_t* dst = wcstr;
-        bool     writeVerticalBar = false;
-        for (size_t i = 0; i < tablesCount; ++i) {
-            const auto& item = tables[i];
-            if (!(item.flag & flags)) {
-                continue;
-            }
-
-            if (writeVerticalBar) [[likely]] {
-                *dst = L'|';
-            --sizeInWords;
-            ++dst;
-            }
-            else {
-                writeVerticalBar = true;
-            }
-            if (wcscpy_s(dst, sizeInWords, item.str) != 0) {
-                //error
-                return MakeEmptyWStr(wcstr, sizeInWords);
-            }
-
-            dst += item.strlen;
-            if ((item.strlen) <= sizeInWords) {
-                sizeInWords -= item.strlen;
-            }
-            else {
-                //書き込み先バッファが足りない
-                return MakeEmptyWStr(wcstr, sizeInWords);
-            }
-        }
-        //+1 == '\0'のぶん
-        return std::distance(wcstr, dst) + 1;
-    }
 
     class AutoClose {
     public:
@@ -455,7 +109,30 @@ namespace dds_loader {
     DWORD Loader::GetRGBBitCount()const {
         return m_header.dx7.ddspf.dwRGBBitCount;
     }
-
+    DWORD Loader::GetRBitMask()const {
+        return m_header.dx7.ddspf.dwRBitMask;
+    }
+    DWORD Loader::GetGBitMask()const {
+        return m_header.dx7.ddspf.dwGBitMask;
+    }
+    DWORD Loader::GetBBitMask()const {
+        return m_header.dx7.ddspf.dwBBitMask;
+    }
+    DWORD Loader::GetABitMask()const {
+        return m_header.dx7.ddspf.dwABitMask;
+    }
+    size_t Loader::GetRBitMaskAsWChar(wchar_t* wcstr, size_t sizeInWords)const {
+        return DWordToHexWCStr(wcstr,sizeInWords,GetRBitMask());
+    }
+    size_t Loader::GetGBitMaskAsWChar(wchar_t* wcstr, size_t sizeInWords)const {
+        return DWordToHexWCStr(wcstr,sizeInWords,GetGBitMask());
+    }
+    size_t Loader::GetBBitMaskAsWChar(wchar_t* wcstr, size_t sizeInWords)const {
+        return DWordToHexWCStr(wcstr,sizeInWords,GetBBitMask());
+    }
+    size_t Loader::GetABitMaskAsWChar(wchar_t* wcstr, size_t sizeInWords)const {
+        return DWordToHexWCStr(wcstr,sizeInWords,GetABitMask());
+    }
     DWORD Loader::GetCaps()const {
         return m_header.dx7.dwCaps;
     }
@@ -464,7 +141,7 @@ namespace dds_loader {
         if (! m_validDDS) {
             return MakeEmptyWStr(wcstr,sizeInWords);
         }
-        return MakeFlagsWStr(wcstr, sizeInWords, GetCaps(), sg_caps_tables, _countof(sg_caps_tables));
+        return dds_loader_flags::GetCapsAsWChar(wcstr, sizeInWords, GetCaps());
     }
 
     DWORD Loader::GetCaps2()const {
@@ -475,7 +152,7 @@ namespace dds_loader {
         if (! m_validDDS) {
             return MakeEmptyWStr(wcstr,sizeInWords);
         }
-        return MakeFlagsWStr(wcstr, sizeInWords, GetCaps2(), sg_caps2_tables, _countof(sg_caps2_tables));
+        return dds_loader_flags::GetCaps2AsWChar(wcstr, sizeInWords, GetCaps2());
     }
 
     std::array<BYTE, static_cast<size_t>(Loader::MemberSize::Reserved1Size)> Loader::GetReserved1()const {
@@ -526,9 +203,30 @@ namespace dds_loader {
         if (! m_validDDS) {
             return MakeEmptyWStr(wcstr,sizeInWords);
         }
-        return MakeFlagsWStr(wcstr, sizeInWords, GetDDPFFlags(), sg_ddpf_tables, _countof(sg_ddpf_tables));
+        return dds_loader_flags::GetDDPFFlagsAsWChar(wcstr,sizeInWords,GetDDPFFlags());
     }
 
+    /////////////////////////////////////////////////////////////////////////////////
+    // DX10
+    /////////////////////////////////////////////////////////////////////////////////
+
+    DWORD Loader::GetDx10Format()const {
+        return m_header.dx10.dwFormat;
+    }
+
+    size_t Loader::GetDx10FormatAsDecimal(wchar_t* wcstr, size_t sizeInWords)const {
+        if (! m_validDDS) {
+            return MakeEmptyWStr(wcstr,sizeInWords);
+        }
+        return DWordToDecimalWCStr(wcstr,sizeInWords,GetDx10Format());
+    }
+
+    size_t Loader::GetDx10FormatAsWChar(wchar_t* wcstr, size_t sizeInWords)const {
+        if (! m_validDDS) {
+            return MakeEmptyWStr(wcstr,sizeInWords);
+        }
+        return dds_loader_flags::GetDx10FormatAsWChar(wcstr, sizeInWords,GetDx10Format());
+    }
 
 
 }; /*namespace dds_loadert*/

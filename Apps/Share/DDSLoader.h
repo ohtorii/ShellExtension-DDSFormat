@@ -3,8 +3,9 @@
 #define	DDSFORMAT_DDSLOADER_H
 
 #include <windows.h>
+#include <dxgiformat.h>
 #include <array>
-#include<string>
+#include <string>
 
 namespace dds_loader {
     class Loader {
@@ -38,7 +39,7 @@ namespace dds_loader {
             DWORD    dwReserved2;
         };
         struct DDS_HEADER_DX10 {
-            DWORD    dwFormat;
+            DWORD    dwFormat;      //DXGI_FORMAT (dxgiformat.h 参照)
             DWORD    dwDimension;
             DWORD    dwMiscFlag;
             DWORD    dwArraySize;
@@ -48,6 +49,8 @@ namespace dds_loader {
             DDS_HEADER_DX7      dx7;
             DDS_HEADER_DX10     dx10;
         };
+        static_assert(sizeof(DDS_HEADER_DX7)==128);
+        static_assert(sizeof(DDS_HEADER)    ==(128+20));
 
         /*enum {
             DDS10_DIMENSION_1D = 2,
@@ -59,11 +62,9 @@ namespace dds_loader {
             CapsSize        = sizeof(Loader::DDS_HEADER_DX7::dwCaps),
             Caps2Size       = sizeof(Loader::DDS_HEADER_DX7::dwCaps2),
             Reserved1Size   = sizeof(DDS_HEADER_DX7::dwReserved1),
+            Dx10Format      = sizeof(DDS_HEADER_DX10::dwFormat),
         };
     public:
-        static constexpr size_t GetDDSHeaderDx7Size() { return sizeof(DDS_HEADER_DX7); }
-        static constexpr size_t GetHHSHeaderSize() { return sizeof(DDS_HEADER); }
-
         Loader(const Loader&) = delete;
         Loader& operator=(const Loader&) = delete;
 
@@ -80,11 +81,20 @@ namespace dds_loader {
             //  0xFF   -> l"FF\0"
             FourCCHexDump = static_cast<size_t>(MemberSize::FourCCSize) * 3 + 1,
 
+            //2 = "0x"
+            //8 = DWORD(32bit)の16進数
+            //1 = '\0'
+            DWordAsHex = 2 + 8 + 1,
+
+            //10 = 4294967296
             //+1 == '\0'のぶん
-            Caps    = std::char_traits<wchar_t>::length(L"ALPHA|COMPLEX|TEXTURE|MIPMAP|") + 1,
+            DWordAsDecimal= 10 + 1,
 
             //+1 == '\0'のぶん
-            Caps2   = std::char_traits<wchar_t>::length(L"CUBEMAP|POSITIVE_X|NEGATIVE_X|POSITIVE_Y|NEGATIVE_Y|POSITIVE_Z|NEGATIVE_Z|VOLUME|")+1,
+            Caps = std::char_traits<wchar_t>::length(L"ALPHA|COMPLEX|TEXTURE|MIPMAP|") + 1,
+
+            //+1 == '\0'のぶん
+            Caps2 = std::char_traits<wchar_t>::length(L"CUBEMAP|POSITIVE_X|NEGATIVE_X|POSITIVE_Y|NEGATIVE_Y|POSITIVE_Z|NEGATIVE_Z|VOLUME|") + 1,
 
             //+1 == '\0'のぶん
             Reserved1 = static_cast<size_t>(MemberSize::Reserved1Size) + 1,
@@ -93,10 +103,15 @@ namespace dds_loader {
             //  0xFFA1 -> L"FF A1\0"
             //  0xFF   -> l"FF\0"
             Reserved1HexDump = static_cast<size_t>(MemberSize::Reserved1Size) * 3 + 1,
+
             //+1 == '\0'のぶん
             Reserved1AsciiDump = static_cast<size_t>(MemberSize::Reserved1Size) + 1,
 
+            //+1 == '\0'のぶん
             PixelFormat = std::char_traits<wchar_t>::length(L"ALPHAPIXELS|ALPHA|FOURCC|PALETTEINDEXED4|PALETTEINDEXED8|RGB|LUMINANCE|BUMPDUDV|") + 1,
+
+            //+1 == '\0'のぶん
+            Dx10Format = std::char_traits<wchar_t>::length(L"DXGI_FORMAT_SAMPLER_FEEDBACK_MIP_REGION_USED_OPAQUE") + 1,
         };
 
         /// <summary>
@@ -144,6 +159,40 @@ namespace dds_loader {
         /// </summary>
         /// <returns></returns>
         DWORD GetRGBBitCount()const;
+
+        DWORD GetRBitMask()const;
+        DWORD GetGBitMask()const;
+        DWORD GetBBitMask()const;
+        DWORD GetABitMask()const;
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="wcstr"></param>
+        /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::DWordAsHex)</param>
+        /// <returns></returns>
+        size_t GetRBitMaskAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="wcstr"></param>
+        /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::DWordAsHex)</param>
+        /// <returns></returns>
+        size_t GetGBitMaskAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="wcstr"></param>
+        /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::DWordAsHex)</param>
+        /// <returns></returns>
+        size_t GetBBitMaskAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="wcstr"></param>
+        /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::DWordAsHex)</param>
+        /// <returns></returns>
+        size_t GetABitMaskAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
 
         /// <summary>
         /// DDS_HEADER_DX7::dwCapsを取得する
@@ -217,6 +266,28 @@ namespace dds_loader {
         /// <param name="sizeInWords">書き込み先の文字数（最低でもPixelFormat）</param>
         /// <returns>書き込んだ文字数</returns>
         size_t GetDDPFFlagsAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+
+        /// <summary>
+        /// DDS_HEADER_DX10::dwFormat を取得する
+        /// </summary>
+        /// <returns></returns>
+        DWORD GetDx10Format()const;
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="wcstr"></param>
+        /// <param name="sizeInWords">書き込み先の文字数（最低でもvMinimumBufferCount::DWordAsDecimal）</param>
+        /// <returns></returns>
+        size_t GetDx10FormatAsDecimal(wchar_t* wcstr, size_t sizeInWords)const;
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="wcstr"></param>
+        /// <param name="sizeInWords">書き込み先の文字数（最低でもvMinimumBufferCount::DX10Format）</param>
+        /// <returns></returns>
+        size_t GetDx10FormatAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
 
     private:
         void Initialize();
