@@ -36,9 +36,9 @@ namespace dds_loader_utils {
 
     /// <summary>
     /// BYTE配列をASCII文字列へ変換する
-    /// (Ex.) src   = [0x44,0x44,0x53,0x20]
-    ///       dst   = L"DDS \0"
-    ///      return = 5
+    /// (e.g.) src   = [0x44,0x44,0x53,0x20]
+    ///        dst   = L"DDS \0"
+    ///       return = 5
     /// </summary>
     /// <param name="dst"></param>
     /// <param name="dstCount"></param>
@@ -50,19 +50,19 @@ namespace dds_loader_utils {
 
     /// <summary>
     /// コンバート可能なAscii文字数を計算する(終端の\0は考慮しない)
-    /// (Ex 1.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
+    /// (e.g. 1.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
     ///         dstCount = 12+1;
     ///         return     4;
     ///
-    /// (Ex 2.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
+    /// (e.g. 2.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
     ///         dstCount = 12;
     ///         return     4;
     ///
-    /// (Ex 3.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
+    /// (e.g. 3.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
     ///         dstCount = 3;
     ///         return     1;
     ///
-    /// (Ex 4.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
+    /// (e.g. 4.) srcCount = 4;      //[0x44,0x44,0x53,0x20]
     ///         dstCount = 2;
     ///         return     0;
     /// </summary>
@@ -73,7 +73,7 @@ namespace dds_loader_utils {
 
     /// <summary>
     /// BYTE配列を16進数文字列へ変換する
-    /// (Ex.) src   = [0x44,0x44,0x53,0x20]
+    /// (e.g.)src   = [0x44,0x44,0x53,0x20]
     ///       dst   = L"44 44 53 20\0"
     ///      return = 12
     /// </summary>

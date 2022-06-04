@@ -79,16 +79,16 @@ namespace dds_loader {
 
         /// <summary>
         ///  FourCCをバイト配列で得る
-        /// (Ex. 1) {'D','X','1','0'}
-        /// (Ex. 2) {0x00, 0x00, 0x00, 0x24}  //<--A16B16G16R16
+        /// (e.g. 1) {'D','X','1','0'}
+        /// (e.g. 2) {0x00, 0x00, 0x00, 0x24}  //<--A16B16G16R16
         /// </summary>
         /// <returns>フォーマットのバイト配列</returns>
         std::array<BYTE, static_cast<size_t>(MemberSize::FourCCSize)> GetFourCC()const;
 
         /// <summary>
         /// FourCCをワイド文字列で受け取る
-        /// (Ex. 1) L"DX10"
-        /// (Ex. 2) L"...."  //<--0x00000024(A16B16G16R16)は全てさせ移御文字（表示できない）なので L"...." となる
+        /// (e.g. 1) L"DX10"
+        /// (e.g. 2) L"...."  //<--0x00000024(A16B16G16R16)は全てさせ移御文字（表示できない）なので L"...." となる
         /// </summary>
         /// <param name="wcstr">書き込み先</param>
         /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::AsciiDumpFourCC)</param>
@@ -97,8 +97,8 @@ namespace dds_loader {
 
         /// <summary>
         /// FourCCをフォーマットで取得する
-        /// (Ex. 1) {'D','X','1','0'}
-        /// (Ex. 2) {'A','1','6','B','1','6','G','1','6','R','1','6'}
+        /// (e.g. 1) {'D','X','1','0'}
+        /// (e.g. 2) {'A','1','6','B','1','6','G','1','6','R','1','6'}
         /// </summary>
         /// <param name="wcstr">書き込み先</param>
         /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::FourCCHexDump)</param>
@@ -223,7 +223,7 @@ namespace dds_loader {
 
         /// <summary>
         /// DDS_PIXELFORMAT_DX7::dwFlagsを文字列で取得する
-        /// (Ex.) "ALPHA|FOURCC"
+        /// (e.g.) "ALPHA|FOURCC"
         /// </summary>
         /// <param name="wcstr">書き込み先</param>
         /// <param name="sizeInWords">書き込み先の文字数（最低でもPixelFormat）</param>
