@@ -11,6 +11,7 @@ namespace dds_format {
 
         SpinLock() {
             const DWORD defaultValue = 512;
+            //FALSEを返しても何も出来ないため無視しています。
             auto _ = InitializeCriticalSectionAndSpinCount(&m_cs, defaultValue);
         }
         ~SpinLock() {

@@ -17,6 +17,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DDSLoader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)internal\DDSFormatFlags.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)internal\DDSFormatUtils.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)internal\DDSStruct.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)DDSLoader.cpp" />

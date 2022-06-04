@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <functional>
 
+///カラムに定数値を返す処理を「有効(1)・無効(0)」する
+///定数値を返すことでパフォーマンスの最速値を調査する用途で利用します
+#define RETURN_CONSTANT_VALUES_FOR_THE_COLUMNS (0)
 
 namespace {
     enum class Column : DWORD{
@@ -23,13 +26,17 @@ namespace {
         MipMapCount,
         Reserved1AsAsciiDump,
         Reserved1AsHexDump,
-        Dx10FormatAsDecimal,
         Dx10FormatAsChar,
+        Dx10FormatAsDecimal,
 
 
         Number,
     };
 
+
+    /////////////////////////////////////////////////////////////////////////////////
+    // Initialize XXX
+    /////////////////////////////////////////////////////////////////////////////////
     HRESULT InitializeAsString(SHCOLUMNINFO* psci, DWORD pid, UINT chars, const wchar_t* title, const wchar_t* description) {
         psci-> scid.fmtid = CLSID_DDSFormatColExt;
         psci-> scid.pid   = pid;
@@ -58,20 +65,36 @@ namespace {
         return S_OK;
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////////
+    // Make XXX
+    /////////////////////////////////////////////////////////////////////////////////
     HRESULT MakeWStr(dds_loader::Loader*loader, std::function<size_t(dds_loader::Loader*, wchar_t*, size_t)> method, VARIANT* pvarData) {
+#if RETURN_CONSTANT_VALUES_FOR_THE_COLUMNS
+        CComVariant vData("HOGE");
+        return vData.Detach(pvarData);
+#else
         std::array<wchar_t,static_cast<size_t>(dds_loader::Loader::MinimumBufferCount::Reserved1HexDump)>      szField;
         szField[0] = '\0';//念のため
         /*auto _ = */ method(loader, szField.data(), szField.size());
         szField.back() = '\0';//念のため
         CComVariant vData(szField.data());
         return vData.Detach(pvarData);
+#endif
     }
 
     HRESULT MakeDWORDAsDecimal(dds_loader::Loader*loader, std::function<DWORD(dds_loader::Loader*)> method, VARIANT* pvarData) {
-        CComVariant vData(static_cast<int>(method(loader)));
+#if RETURN_CONSTANT_VALUES_FOR_THE_COLUMNS
+        CComVariant vData(static_cast<DWORD>(0));
         return vData.Detach(pvarData);
+#else
+        CComVariant vData(static_cast<DWORD>(method(loader)));
+        return vData.Detach(pvarData);
+#endif
     }
-};
+}; //namespace
+
+
 
 namespace dds_format {
     STDMETHODIMP CDDSFormatColExt::Initialize([[maybe_unused]] LPCSHCOLUMNINIT psci) {
@@ -98,16 +121,16 @@ namespace dds_format {
             return InitializeAsString(psci, dwIndex, 10, _T("RGBBitCount"), _T("RGBBitCount of DDS"));
 
         case static_cast<DWORD>(Column::RBitMask):
-            return InitializeAsHex(psci, dwIndex, 10, _T("RedBitMask"), _T("Red bit mask of DDS"));
+            return InitializeAsHex(psci, dwIndex, 10, _T("RedBitMask(Hex)"), _T("Red bit mask of DDS"));
 
         case static_cast<DWORD>(Column::GBitMask):
-            return InitializeAsHex(psci, dwIndex, 10, _T("GreenBitMask"), _T("Green bit mask of DDS"));
+            return InitializeAsHex(psci, dwIndex, 10, _T("GreenBitMask(Hex)"), _T("Green bit mask of DDS"));
 
         case static_cast<DWORD>(Column::BBitMask):
-            return InitializeAsHex(psci, dwIndex, 2, _T("BlueBitMask"), _T("Blue bit mask of DDS"));
+            return InitializeAsHex(psci, dwIndex, 2, _T("BlueBitMask(Hex)"), _T("Blue bit mask of DDS"));
 
         case static_cast<DWORD>(Column::ABitMask):
-            return InitializeAsHex(psci, dwIndex, 10, _T("AlphabitMask"), _T("Alpha bit mask of DDS"));
+            return InitializeAsHex(psci, dwIndex, 10, _T("AlphabitMask(Hex)"), _T("Alpha bit mask of DDS"));
 
         case static_cast<DWORD>(Column::Caps):
             return InitializeAsString(psci, dwIndex, 10, _T("Caps"), _T("Caps of DDS"));
@@ -123,11 +146,13 @@ namespace dds_format {
 
         case static_cast<DWORD>(Column::Reserved1AsHexDump):
             return InitializeAsString(psci, dwIndex, 16, _T("Reserved1(Hex)"), _T("DDS reserved1 area as hex dump"));
-        
-        case static_cast<DWORD>(Column::Dx10FormatAsDecimal):
 
         case static_cast<DWORD>(Column::Dx10FormatAsChar):
-            return InitializeAsString(psci, dwIndex, 16, _T("DX10Format(Hex)"), _T("DDS reserved1 area as hex dump"));
+            return InitializeAsString(psci, dwIndex, 16, _T("DX10Format"), _T("DX10 Formats as char"));
+
+        case static_cast<DWORD>(Column::Dx10FormatAsDecimal):
+            return InitializeAsInt(psci, dwIndex, 10, _T("DX10Format(Decimal)"), _T("DX10 Format as decimal"));
+
 
         default:
             return S_FALSE;
@@ -150,54 +175,86 @@ namespace dds_format {
             return S_FALSE;
         }
 
-        dds_loader::Loader loaderDXT1;
-        if (loaderDXT1.Load(pscd->wszFile) == false)
-        {
-            return S_FALSE;
+#if RETURN_CONSTANT_VALUES_FOR_THE_COLUMNS
+        dds_loader::Loader ddsLoader;
+        return CreateItemData(ddsLoader, pscid, pscd, pvarData);
+#else
+        //(Memo)以下2種類のデータをキャッシュしている
+        // - カラム情報
+        // - DDSファイルのヘッダ情報
+        if (m_columnCache.Fetch(pscd->wszFile, pscid->pid, pvarData)) {
+            return S_OK;
+        }else {
+            dds_loader::Loader ddsLoader;
+            if (m_fileCache.Fetch(pscd->wszFile, ddsLoader.RefChunk()) == false) {
+                if (ddsLoader.Load(pscd->wszFile) == false)
+                {
+                    return S_FALSE;
+                }
+                m_fileCache.Store(pscd->wszFile, ddsLoader.RefChunk());
+            }
+            const auto result = CreateItemData(ddsLoader, pscid, pscd, pvarData);
+            if (result == S_OK) {
+                m_columnCache.Store(pscd->wszFile, pscid->pid, pvarData);
+            }
+            return result;
         }
+#endif
+    }
+
+    STDMETHODIMP CDDSFormatColExt::CreateItemData(dds_loader::Loader& ddsLoader, LPCSHCOLUMNID pscid, LPCSHCOLUMNDATA pscd, VARIANT* pvarData)
+    {
+        (void)pscd;
+
         switch (pscid->pid)
         {
         case static_cast<DWORD>(Column::ForCCAsciiDump):
-            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetFourCCAsAsciiDump, pvarData);
+            return MakeWStr(&ddsLoader, &dds_loader::Loader::GetFourCCAsAsciiDump, pvarData);
 
         case static_cast<DWORD>(Column::ForCCHexDump):
-            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetFourCCAsHexDump, pvarData);
+            return MakeWStr(&ddsLoader, &dds_loader::Loader::GetFourCCAsHexDump, pvarData);
 
         case static_cast<DWORD>(Column::PixelFormat):
-            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetDDPFFlagsAsWChar, pvarData);
+            return MakeWStr(&ddsLoader, &dds_loader::Loader::GetDDPFFlagsAsWChar, pvarData);
 
         case static_cast<DWORD>(Column::Depth):
-            return MakeDWORDAsDecimal(&loaderDXT1, &dds_loader::Loader::GetDepth, pvarData);
+            return MakeDWORDAsDecimal(&ddsLoader, &dds_loader::Loader::GetDepth, pvarData);
 
         case static_cast<DWORD>(Column::RGBBitCount):
-            return MakeDWORDAsDecimal(&loaderDXT1, &dds_loader::Loader::GetRGBBitCount, pvarData);
+            return MakeDWORDAsDecimal(&ddsLoader, &dds_loader::Loader::GetRGBBitCount, pvarData);
 
         case static_cast<DWORD>(Column::RBitMask):
-            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetRBitMaskAsWChar, pvarData);
+            return MakeWStr(&ddsLoader, &dds_loader::Loader::GetRBitMaskAsHexWChar, pvarData);
 
         case static_cast<DWORD>(Column::GBitMask):
-            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetGBitMaskAsWChar, pvarData);
+            return MakeWStr(&ddsLoader, &dds_loader::Loader::GetGBitMaskAsHexWChar, pvarData);
 
         case static_cast<DWORD>(Column::BBitMask):
-            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetBBitMaskAsWChar, pvarData);
+            return MakeWStr(&ddsLoader, &dds_loader::Loader::GetBBitMaskAsHexWChar, pvarData);
 
         case static_cast<DWORD>(Column::ABitMask):
-            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetABitMaskAsWChar, pvarData);
+            return MakeWStr(&ddsLoader, &dds_loader::Loader::GetABitMaskAsHexWChar, pvarData);
 
         case static_cast<DWORD>(Column::Caps):
-            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetCapsAsWChar, pvarData);
+            return MakeWStr(&ddsLoader, &dds_loader::Loader::GetCapsAsWChar, pvarData);
 
         case static_cast<DWORD>(Column::Caps2):
-            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetCaps2AsWChar, pvarData);
+            return MakeWStr(&ddsLoader, &dds_loader::Loader::GetCaps2AsWChar, pvarData);
 
         case static_cast<DWORD>(Column::MipMapCount):
-            return MakeDWORDAsDecimal(&loaderDXT1, &dds_loader::Loader::GetMipMapCount, pvarData);
+            return MakeDWORDAsDecimal(&ddsLoader, &dds_loader::Loader::GetMipMapCount, pvarData);
 
         case static_cast<DWORD>(Column::Reserved1AsAsciiDump):
-            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetReserved1AsAsciiDump, pvarData);
+            return MakeWStr(&ddsLoader, &dds_loader::Loader::GetReserved1AsAsciiDump, pvarData);
 
         case static_cast<DWORD>(Column::Reserved1AsHexDump):
-            return MakeWStr(&loaderDXT1, &dds_loader::Loader::GetReserved1AsHexDump, pvarData);
+            return MakeWStr(&ddsLoader, &dds_loader::Loader::GetReserved1AsHexDump, pvarData);
+
+        case static_cast<DWORD>(Column::Dx10FormatAsChar):
+            return MakeWStr(&ddsLoader, &dds_loader::Loader::GetDx10FormatAsWChar, pvarData);
+
+        case static_cast<DWORD>(Column::Dx10FormatAsDecimal):
+            return MakeDWORDAsDecimal(&ddsLoader, &dds_loader::Loader::GetDx10Format, pvarData);
 
         [[unlikely]]default:
             assert(false);

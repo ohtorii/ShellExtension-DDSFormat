@@ -1,7 +1,11 @@
 #include "DDSFormatFlags.h"
 #include "DDSLoader.h"
 #include "DDSFormatUtils.h"
+
 #include <string>
+#include <dxgiformat.h>
+
+
 
 using namespace dds_loader_utils;
 
@@ -60,8 +64,8 @@ namespace {
 
             if (writeVerticalBar) [[likely]] {
                 *dst = L'|';
-            --sizeInWords;
-            ++dst;
+                --sizeInWords;
+                ++dst;
             }
             else {
                 writeVerticalBar = true;
@@ -82,6 +86,22 @@ namespace {
         }
         //+1 == '\0'‚Ì‚Ô‚ñ
         return std::distance(wcstr, dst) + 1;
+    }
+    size_t MakeValueWStr(wchar_t* const wcstr, size_t sizeInWords, const DWORD value, const FlagTableItem* const tables, const size_t tablesCount) {
+        const auto* first   = tables;
+        const auto* end = tables + tablesCount;
+        for (; first != end; ++first) {
+            if (value != first->flag) {
+                continue;
+            }
+            if (wcscpy_s(wcstr, sizeInWords, first->str) != 0) {
+                //error
+                return MakeEmptyWStr(wcstr, sizeInWords);
+            }
+            //+! == '\0'‚Ì‚Ô‚ñ
+            return first->strlen + 1;
+        }
+        return 0;
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -150,9 +170,129 @@ namespace {
     ///////////////////////////////////////////////////////////////////////////////
     //  DXGI_FORMAT_*
     ///////////////////////////////////////////////////////////////////////////////
-    #define MAKE_DXGIFORMAT_ITEM(flag) DXGI_FORMAT_##flag, L""#flag, std::char_traits<wchar_t>::length(L""#flag)
+    #define MAKE_DXGIFORMAT_ITEM(value) DXGI_FORMAT_##value, L""#value, std::char_traits<wchar_t>::length(L""#value)
     constexpr FlagTableItem sg_dxgi_tables[] = {
-        {MAKE_DXGIFORMAT_ITEM(UNKNOWN)},
+        {MAKE_DXGIFORMAT_ITEM(UNKNOWN	                              )},
+        {MAKE_DXGIFORMAT_ITEM(R32G32B32A32_TYPELESS                   )},
+        {MAKE_DXGIFORMAT_ITEM(R32G32B32A32_FLOAT                      )},
+        {MAKE_DXGIFORMAT_ITEM(R32G32B32A32_UINT                       )},
+        {MAKE_DXGIFORMAT_ITEM(R32G32B32A32_SINT                       )},
+        {MAKE_DXGIFORMAT_ITEM(R32G32B32_TYPELESS                      )},
+        {MAKE_DXGIFORMAT_ITEM(R32G32B32_FLOAT                         )},
+        {MAKE_DXGIFORMAT_ITEM(R32G32B32_UINT                          )},
+        {MAKE_DXGIFORMAT_ITEM(R32G32B32_SINT                          )},
+        {MAKE_DXGIFORMAT_ITEM(R16G16B16A16_TYPELESS                   )},
+        {MAKE_DXGIFORMAT_ITEM(R16G16B16A16_FLOAT                      )},
+        {MAKE_DXGIFORMAT_ITEM(R16G16B16A16_UNORM                      )},
+        {MAKE_DXGIFORMAT_ITEM(R16G16B16A16_UINT                       )},
+        {MAKE_DXGIFORMAT_ITEM(R16G16B16A16_SNORM                      )},
+        {MAKE_DXGIFORMAT_ITEM(R16G16B16A16_SINT                       )},
+        {MAKE_DXGIFORMAT_ITEM(R32G32_TYPELESS                         )},
+        {MAKE_DXGIFORMAT_ITEM(R32G32_FLOAT                            )},
+        {MAKE_DXGIFORMAT_ITEM(R32G32_UINT                             )},
+        {MAKE_DXGIFORMAT_ITEM(R32G32_SINT                             )},
+        {MAKE_DXGIFORMAT_ITEM(R32G8X24_TYPELESS                       )},
+        {MAKE_DXGIFORMAT_ITEM(D32_FLOAT_S8X24_UINT                    )},
+        {MAKE_DXGIFORMAT_ITEM(R32_FLOAT_X8X24_TYPELESS                )},
+        {MAKE_DXGIFORMAT_ITEM(X32_TYPELESS_G8X24_UINT                 )},
+        {MAKE_DXGIFORMAT_ITEM(R10G10B10A2_TYPELESS                    )},
+        {MAKE_DXGIFORMAT_ITEM(R10G10B10A2_UNORM                       )},
+        {MAKE_DXGIFORMAT_ITEM(R10G10B10A2_UINT                        )},
+        {MAKE_DXGIFORMAT_ITEM(R11G11B10_FLOAT                         )},
+        {MAKE_DXGIFORMAT_ITEM(R8G8B8A8_TYPELESS                       )},
+        {MAKE_DXGIFORMAT_ITEM(R8G8B8A8_UNORM                          )},
+        {MAKE_DXGIFORMAT_ITEM(R8G8B8A8_UNORM_SRGB                     )},
+        {MAKE_DXGIFORMAT_ITEM(R8G8B8A8_UINT                           )},
+        {MAKE_DXGIFORMAT_ITEM(R8G8B8A8_SNORM                          )},
+        {MAKE_DXGIFORMAT_ITEM(R8G8B8A8_SINT                           )},
+        {MAKE_DXGIFORMAT_ITEM(R16G16_TYPELESS                         )},
+        {MAKE_DXGIFORMAT_ITEM(R16G16_FLOAT                            )},
+        {MAKE_DXGIFORMAT_ITEM(R16G16_UNORM                            )},
+        {MAKE_DXGIFORMAT_ITEM(R16G16_UINT                             )},
+        {MAKE_DXGIFORMAT_ITEM(R16G16_SNORM                            )},
+        {MAKE_DXGIFORMAT_ITEM(R16G16_SINT                             )},
+        {MAKE_DXGIFORMAT_ITEM(R32_TYPELESS                            )},
+        {MAKE_DXGIFORMAT_ITEM(D32_FLOAT                               )},
+        {MAKE_DXGIFORMAT_ITEM(R32_FLOAT                               )},
+        {MAKE_DXGIFORMAT_ITEM(R32_UINT                                )},
+        {MAKE_DXGIFORMAT_ITEM(R32_SINT                                )},
+        {MAKE_DXGIFORMAT_ITEM(R24G8_TYPELESS                          )},
+        {MAKE_DXGIFORMAT_ITEM(D24_UNORM_S8_UINT                       )},
+        {MAKE_DXGIFORMAT_ITEM(R24_UNORM_X8_TYPELESS                   )},
+        {MAKE_DXGIFORMAT_ITEM(X24_TYPELESS_G8_UINT                    )},
+        {MAKE_DXGIFORMAT_ITEM(R8G8_TYPELESS                           )},
+        {MAKE_DXGIFORMAT_ITEM(R8G8_UNORM                              )},
+        {MAKE_DXGIFORMAT_ITEM(R8G8_UINT                               )},
+        {MAKE_DXGIFORMAT_ITEM(R8G8_SNORM                              )},
+        {MAKE_DXGIFORMAT_ITEM(R8G8_SINT                               )},
+        {MAKE_DXGIFORMAT_ITEM(R16_TYPELESS                            )},
+        {MAKE_DXGIFORMAT_ITEM(R16_FLOAT                               )},
+        {MAKE_DXGIFORMAT_ITEM(D16_UNORM                               )},
+        {MAKE_DXGIFORMAT_ITEM(R16_UNORM                               )},
+        {MAKE_DXGIFORMAT_ITEM(R16_UINT                                )},
+        {MAKE_DXGIFORMAT_ITEM(R16_SNORM                               )},
+        {MAKE_DXGIFORMAT_ITEM(R16_SINT                                )},
+        {MAKE_DXGIFORMAT_ITEM(R8_TYPELESS                             )},
+        {MAKE_DXGIFORMAT_ITEM(R8_UNORM                                )},
+        {MAKE_DXGIFORMAT_ITEM(R8_UINT                                 )},
+        {MAKE_DXGIFORMAT_ITEM(R8_SNORM                                )},
+        {MAKE_DXGIFORMAT_ITEM(R8_SINT                                 )},
+        {MAKE_DXGIFORMAT_ITEM(A8_UNORM                                )},
+        {MAKE_DXGIFORMAT_ITEM(R1_UNORM                                )},
+        {MAKE_DXGIFORMAT_ITEM(R9G9B9E5_SHAREDEXP                      )},
+        {MAKE_DXGIFORMAT_ITEM(R8G8_B8G8_UNORM                         )},
+        {MAKE_DXGIFORMAT_ITEM(G8R8_G8B8_UNORM                         )},
+        {MAKE_DXGIFORMAT_ITEM(BC1_TYPELESS                            )},
+        {MAKE_DXGIFORMAT_ITEM(BC1_UNORM                               )},
+        {MAKE_DXGIFORMAT_ITEM(BC1_UNORM_SRGB                          )},
+        {MAKE_DXGIFORMAT_ITEM(BC2_TYPELESS                            )},
+        {MAKE_DXGIFORMAT_ITEM(BC2_UNORM                               )},
+        {MAKE_DXGIFORMAT_ITEM(BC2_UNORM_SRGB                          )},
+        {MAKE_DXGIFORMAT_ITEM(BC3_TYPELESS                            )},
+        {MAKE_DXGIFORMAT_ITEM(BC3_UNORM                               )},
+        {MAKE_DXGIFORMAT_ITEM(BC3_UNORM_SRGB                          )},
+        {MAKE_DXGIFORMAT_ITEM(BC4_TYPELESS                            )},
+        {MAKE_DXGIFORMAT_ITEM(BC4_UNORM                               )},
+        {MAKE_DXGIFORMAT_ITEM(BC4_SNORM                               )},
+        {MAKE_DXGIFORMAT_ITEM(BC5_TYPELESS                            )},
+        {MAKE_DXGIFORMAT_ITEM(BC5_UNORM                               )},
+        {MAKE_DXGIFORMAT_ITEM(BC5_SNORM                               )},
+        {MAKE_DXGIFORMAT_ITEM(B5G6R5_UNORM                            )},
+        {MAKE_DXGIFORMAT_ITEM(B5G5R5A1_UNORM                          )},
+        {MAKE_DXGIFORMAT_ITEM(B8G8R8A8_UNORM                          )},
+        {MAKE_DXGIFORMAT_ITEM(B8G8R8X8_UNORM                          )},
+        {MAKE_DXGIFORMAT_ITEM(R10G10B10_XR_BIAS_A2_UNORM              )},
+        {MAKE_DXGIFORMAT_ITEM(B8G8R8A8_TYPELESS                       )},
+        {MAKE_DXGIFORMAT_ITEM(B8G8R8A8_UNORM_SRGB                     )},
+        {MAKE_DXGIFORMAT_ITEM(B8G8R8X8_TYPELESS                       )},
+        {MAKE_DXGIFORMAT_ITEM(B8G8R8X8_UNORM_SRGB                     )},
+        {MAKE_DXGIFORMAT_ITEM(BC6H_TYPELESS                           )},
+        {MAKE_DXGIFORMAT_ITEM(BC6H_UF16                               )},
+        {MAKE_DXGIFORMAT_ITEM(BC6H_SF16                               )},
+        {MAKE_DXGIFORMAT_ITEM(BC7_TYPELESS                            )},
+        {MAKE_DXGIFORMAT_ITEM(BC7_UNORM                               )},
+        {MAKE_DXGIFORMAT_ITEM(BC7_UNORM_SRGB                          )},
+        {MAKE_DXGIFORMAT_ITEM(AYUV                                    )},
+        {MAKE_DXGIFORMAT_ITEM(Y410                                    )},
+        {MAKE_DXGIFORMAT_ITEM(Y416                                    )},
+        {MAKE_DXGIFORMAT_ITEM(NV12                                    )},
+        {MAKE_DXGIFORMAT_ITEM(P010                                    )},
+        {MAKE_DXGIFORMAT_ITEM(P016                                    )},
+        {MAKE_DXGIFORMAT_ITEM(420_OPAQUE                              )},
+        {MAKE_DXGIFORMAT_ITEM(YUY2                                    )},
+        {MAKE_DXGIFORMAT_ITEM(Y210                                    )},
+        {MAKE_DXGIFORMAT_ITEM(Y216                                    )},
+        {MAKE_DXGIFORMAT_ITEM(NV11                                    )},
+        {MAKE_DXGIFORMAT_ITEM(AI44                                    )},
+        {MAKE_DXGIFORMAT_ITEM(IA44                                    )},
+        {MAKE_DXGIFORMAT_ITEM(P8                                      )},
+        {MAKE_DXGIFORMAT_ITEM(A8P8                                    )},
+        {MAKE_DXGIFORMAT_ITEM(B4G4R4A4_UNORM                          )},
+        {MAKE_DXGIFORMAT_ITEM(P208                                    )},
+        {MAKE_DXGIFORMAT_ITEM(V208                                    )},
+        {MAKE_DXGIFORMAT_ITEM(V408                                    )},
+        {MAKE_DXGIFORMAT_ITEM(SAMPLER_FEEDBACK_MIN_MIP_OPAQUE         )},
+        {MAKE_DXGIFORMAT_ITEM(SAMPLER_FEEDBACK_MIP_REGION_USED_OPAQUE )},
     };
 
 };
@@ -171,7 +311,7 @@ namespace dds_loader_flags {
     }
 
     size_t GetDx10FormatAsWChar(wchar_t* wcstr, size_t sizeInWords,DWORD format) {
-        return MakeFlagsWStr(wcstr, sizeInWords, format, sg_dxgi_tables, _countof(sg_dxgi_tables));
+        return MakeValueWStr(wcstr, sizeInWords, format, sg_dxgi_tables, _countof(sg_dxgi_tables));
     }
 };
 

@@ -2,55 +2,14 @@
 #ifndef	DDSFORMAT_DDSLOADER_H
 #define	DDSFORMAT_DDSLOADER_H
 
+#include "internal/DDSStruct.h"
 #include <windows.h>
-#include <dxgiformat.h>
 #include <array>
 #include <string>
 
 namespace dds_loader {
     class Loader {
     private:
-        struct DDS_PIXELFORMAT_DX7 {
-            DWORD    dwSize;
-            DWORD    dwFlags;
-            DWORD    dwFourCC;
-            DWORD    dwRGBBitCount;
-            DWORD    dwRBitMask;
-            DWORD    dwGBitMask;
-            DWORD    dwBBitMask;
-            DWORD    dwABitMask;
-        };
-
-        struct DDS_HEADER_DX7 {
-            DWORD    dwSignature;
-            DWORD    dwSize;
-            DWORD    dwFlags;
-            DWORD    dwHeight;
-            DWORD    dwWidth;
-            DWORD    dwPitchOrLinearSize;
-            DWORD    dwDepth;
-            DWORD    dwMipMapCount;
-            DWORD    dwReserved1[11];
-            DDS_PIXELFORMAT_DX7 ddspf;
-            DWORD    dwCaps;
-            DWORD    dwCaps2;
-            DWORD    dwCaps3;
-            DWORD    dwCaps4;
-            DWORD    dwReserved2;
-        };
-        struct DDS_HEADER_DX10 {
-            DWORD    dwFormat;      //DXGI_FORMAT (dxgiformat.h 参照)
-            DWORD    dwDimension;
-            DWORD    dwMiscFlag;
-            DWORD    dwArraySize;
-            DWORD    dwMiscFlag2;
-        };
-        struct DDS_HEADER {
-            DDS_HEADER_DX7      dx7;
-            DDS_HEADER_DX10     dx10;
-        };
-        static_assert(sizeof(DDS_HEADER_DX7)==128);
-        static_assert(sizeof(DDS_HEADER)    ==(128+20));
 
         /*enum {
             DDS10_DIMENSION_1D = 2,
@@ -58,9 +17,9 @@ namespace dds_loader {
             DDS10_DIMENSION_3D = 4,
         };*/
         enum class MemberSize : size_t{
-            FourCCSize      = sizeof(Loader::DDS_PIXELFORMAT_DX7::dwFourCC),
-            CapsSize        = sizeof(Loader::DDS_HEADER_DX7::dwCaps),
-            Caps2Size       = sizeof(Loader::DDS_HEADER_DX7::dwCaps2),
+            FourCCSize      = sizeof(DDS_PIXELFORMAT_DX7::dwFourCC),
+            CapsSize        = sizeof(DDS_HEADER_DX7::dwCaps),
+            Caps2Size       = sizeof(DDS_HEADER_DX7::dwCaps2),
             Reserved1Size   = sizeof(DDS_HEADER_DX7::dwReserved1),
             Dx10Format      = sizeof(DDS_HEADER_DX10::dwFormat),
         };
@@ -71,6 +30,10 @@ namespace dds_loader {
         Loader();
         Loader(const wchar_t* fileName);
         bool Load(const wchar_t* fileName);
+        Chunk& RefChunk();
+
+        //void Serialize(std::array<BYTE,>&outData)const;
+        //void DeSerialize();
 
         enum class MinimumBufferCount :size_t {
             //+1 == '\0'のぶん
@@ -171,28 +134,28 @@ namespace dds_loader {
         /// <param name="wcstr"></param>
         /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::DWordAsHex)</param>
         /// <returns></returns>
-        size_t GetRBitMaskAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+        size_t GetRBitMaskAsHexWChar(wchar_t* wcstr, size_t sizeInWords)const;
         /// <summary>
         ///
         /// </summary>
         /// <param name="wcstr"></param>
         /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::DWordAsHex)</param>
         /// <returns></returns>
-        size_t GetGBitMaskAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+        size_t GetGBitMaskAsHexWChar(wchar_t* wcstr, size_t sizeInWords)const;
         /// <summary>
         ///
         /// </summary>
         /// <param name="wcstr"></param>
         /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::DWordAsHex)</param>
         /// <returns></returns>
-        size_t GetBBitMaskAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+        size_t GetBBitMaskAsHexWChar(wchar_t* wcstr, size_t sizeInWords)const;
         /// <summary>
         ///
         /// </summary>
         /// <param name="wcstr"></param>
         /// <param name="sizeInWords">書き込み先の文字数(最低でもMinimumBufferCount::DWordAsHex)</param>
         /// <returns></returns>
-        size_t GetABitMaskAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
+        size_t GetABitMaskAsHexWChar(wchar_t* wcstr, size_t sizeInWords)const;
 
         /// <summary>
         /// DDS_HEADER_DX7::dwCapsを取得する
@@ -292,9 +255,7 @@ namespace dds_loader {
     private:
         void Initialize();
 
-        alignas(16) DDS_HEADER  m_header;
-        bool        m_validDDS;
-        bool        m_isDX10;
+        Chunk m_chunk;
     };
 };
 

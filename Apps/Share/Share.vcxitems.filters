@@ -17,6 +17,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)internal\DDSFormatUtils.h">
       <Filter>internal</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)internal\DDSStruct.h">
+      <Filter>internal</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="internal">

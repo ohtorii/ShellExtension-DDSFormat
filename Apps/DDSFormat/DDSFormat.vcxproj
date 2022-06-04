@@ -282,6 +282,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NDEBUG;_UNICODE;_ATL_STATIC_REGISTRY;WIN32;_WINDOWS;_USRDLL;STRICT</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NDEBUG;_UNICODE;_ATL_STATIC_REGISTRY;WIN32;_WINDOWS;_USRDLL;STRICT</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="DDSFormatColExtCache.cpp" />
     <ClCompile Include="DLLInterface.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
@@ -297,6 +298,7 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NDEBUG;_UNICODE;_ATL_STATIC_REGISTRY;WIN32;_WINDOWS;_USRDLL;STRICT</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="GeneratedCode\GeneratedCode.cpp" />
+    <ClCompile Include="Logger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DLLExport.def" />
@@ -324,7 +326,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DDSFormatColExt.h" />
+    <ClInclude Include="DDSFormatColExtCache.h" />
     <ClInclude Include="GeneratedCode\GeneratedCode.h" />
+    <ClInclude Include="Logger.h" />
     <ClInclude Include="SpinLock.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>

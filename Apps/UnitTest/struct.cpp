@@ -9,7 +9,7 @@ namespace UnitTest
 {
     TEST_CLASS(StructTest)
     {
-        TEST_METHOD(AlignAs16_Stack)
+     /*   TEST_METHOD(AlignAs16_Stack)
         {
             Loader l1;
             Loader l2;
@@ -23,6 +23,6 @@ namespace UnitTest
             auto *p = new Loader();
             Assert::AreEqual(((intptr_t)p) & 0xf, (intptr_t)0);
             delete p; p = nullptr;
-        }
+        }*/
     };
 };
