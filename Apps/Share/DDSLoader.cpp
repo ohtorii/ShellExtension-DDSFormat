@@ -231,5 +231,17 @@ namespace dds_loader {
         return dds_loader_flags::GetDx10FormatAsWChar(wcstr, sizeInWords,GetDx10Format());
     }
 
+    DWORD Loader::GetDx10Dimension()const {
+        return m_chunk.m_header.dx10.dwDimension;
+    }
+    DWORD Loader::GetDx10MiscFlag()const {
+        return m_chunk.m_header.dx10.dwMiscFlag;
+    }
+    DWORD Loader::GetDx10ArraySize()const {
+        return m_chunk.m_header.dx10.dwArraySize;
+    }
+    DWORD Loader::GetDx10MiscFlag2()const {
+        return m_chunk.m_header.dx10.dwMiscFlag2;
+    }
 
 }; /*namespace dds_loadert*/

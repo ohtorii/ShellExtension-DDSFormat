@@ -152,16 +152,16 @@ namespace {
     constexpr DWORD DDSCAPS2_NEGATIVE_Z	=0x00008000;
     constexpr DWORD DDSCAPS2_VOLUME	    =0x00400000;
 
-    #define MAKE_DDSCAPS2_ITEM(flag) DDSCAPS2_##flag, L""#flag, std::char_traits<wchar_t>::length(L""#flag)
+#define MAKE_DDSCAPS2_ITEM(flag,description) DDSCAPS2_##flag, description, std::char_traits<wchar_t>::length(description)
     constexpr FlagTableItem sg_caps2_tables[] = {
-        {MAKE_DDSCAPS2_ITEM(CUBEMAP)},
-        {MAKE_DDSCAPS2_ITEM(POSITIVE_X)},
-        {MAKE_DDSCAPS2_ITEM(NEGATIVE_X)},
-        {MAKE_DDSCAPS2_ITEM(POSITIVE_Y)},
-        {MAKE_DDSCAPS2_ITEM(NEGATIVE_Y)},
-        {MAKE_DDSCAPS2_ITEM(POSITIVE_Z)},
-        {MAKE_DDSCAPS2_ITEM(NEGATIVE_Z)},
-        {MAKE_DDSCAPS2_ITEM(VOLUME)},
+        {MAKE_DDSCAPS2_ITEM(CUBEMAP,    L"CUBEMAP")},
+        {MAKE_DDSCAPS2_ITEM(POSITIVE_X, L"X+")},
+        {MAKE_DDSCAPS2_ITEM(NEGATIVE_X, L"X-")},
+        {MAKE_DDSCAPS2_ITEM(POSITIVE_Y, L"Y+")},
+        {MAKE_DDSCAPS2_ITEM(NEGATIVE_Y, L"Y-")},
+        {MAKE_DDSCAPS2_ITEM(POSITIVE_Z, L"Z+")},
+        {MAKE_DDSCAPS2_ITEM(NEGATIVE_Z, L"Z-")},
+        {MAKE_DDSCAPS2_ITEM(VOLUME,     L"VOLUME")},
     };
 
     static_assert(PixelFormatMinimumBufferCount(sg_caps2_tables, _countof(sg_caps2_tables)) == static_cast<size_t>(dds_loader::Loader::MinimumBufferCount::Caps2));

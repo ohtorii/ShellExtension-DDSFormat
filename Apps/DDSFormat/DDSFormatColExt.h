@@ -19,7 +19,7 @@ namespace dds_format {
         public IColumnProvider
     {
     public:
-        CDDSFormatColExt() { }
+        CDDSFormatColExt();
 
         BEGIN_COM_MAP(CDDSFormatColExt)
             COM_INTERFACE_ENTRY_IID(IID_IColumnProvider, IColumnProvider)

@@ -4,7 +4,6 @@
 
 namespace {
     //キャッシュの最大サイズ
-    //キャッシュの使用メモリ量が肥大化する（メモリリークと間違われる恐れあり）のを抑えるために必要
     const size_t sg_maxFileChacheSize   = 10000;
     const size_t sg_maxColumnChacheSize = 10000;
 };

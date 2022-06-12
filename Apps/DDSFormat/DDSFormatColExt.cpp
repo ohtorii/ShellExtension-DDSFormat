@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "DDSFormatColExt.h"
 #include "DDSLoader.h"
+#include "Logger.h"
 #include <cstring>
 #include <cassert>
 #include <algorithm>
@@ -28,7 +29,10 @@ namespace {
         Reserved1AsHexDump,
         Dx10FormatAsChar,
         Dx10FormatAsDecimal,
-
+        Dx10FormatDimensionAsDecimal,
+        Dx10FormatMiscFlagAsDecimal,
+        Dx10FormatArraySizeAsDecimal,
+        Dx10FormatMiscFlag2AsDecimal,
 
         Number,
     };
@@ -97,6 +101,14 @@ namespace {
 
 
 namespace dds_format {
+    CDDSFormatColExt::CDDSFormatColExt() {
+#if 1
+        Logger::SetRawWriter(nullptr);
+#else
+        Logger::SetRawWriter(LoggerOutputDebugString::Write);
+#endif
+    }
+
     STDMETHODIMP CDDSFormatColExt::Initialize([[maybe_unused]] LPCSHCOLUMNINIT psci) {
         return S_OK;
     }
@@ -148,11 +160,22 @@ namespace dds_format {
             return InitializeAsString(psci, dwIndex, 16, _T("Reserved1(Hex)"), _T("DDS reserved1 area as hex dump"));
 
         case static_cast<DWORD>(Column::Dx10FormatAsChar):
-            return InitializeAsString(psci, dwIndex, 16, _T("DX10Format"), _T("DX10 Formats as char"));
+            return InitializeAsString(psci, dwIndex, 16, _T("DX10.Format(char)"), _T("DX10 Formats as char"));
 
         case static_cast<DWORD>(Column::Dx10FormatAsDecimal):
-            return InitializeAsInt(psci, dwIndex, 10, _T("DX10Format(Decimal)"), _T("DX10 Format as decimal"));
+            return InitializeAsInt(psci, dwIndex, 10, _T("DX10.Format(decimal)"), _T("DX10 Format as decimal"));
 
+        case static_cast<DWORD>(Column::Dx10FormatDimensionAsDecimal):
+            return InitializeAsInt(psci, dwIndex, 10, _T("DX10.Dimension"), _T("DX10 dimension as decimal"));
+
+        case static_cast<DWORD>(Column::Dx10FormatMiscFlagAsDecimal):
+            return InitializeAsInt(psci, dwIndex, 10, _T("DX10.MiscFlag"), _T("DX10 MiscFlag as decimal"));
+
+        case static_cast<DWORD>(Column::Dx10FormatArraySizeAsDecimal):
+            return InitializeAsInt(psci, dwIndex, 10, _T("DX10.ArraySize"), _T("DX10 ArraySize as decimal"));
+
+        case static_cast<DWORD>(Column::Dx10FormatMiscFlag2AsDecimal):
+            return InitializeAsInt(psci, dwIndex, 10, _T("DX10.MiscFlag2"), _T("DX10 MiscFlag2 as decimal"));
 
         default:
             return S_FALSE;
@@ -255,6 +278,18 @@ namespace dds_format {
 
         case static_cast<DWORD>(Column::Dx10FormatAsDecimal):
             return MakeDWORDAsDecimal(&ddsLoader, &dds_loader::Loader::GetDx10Format, pvarData);
+
+        case static_cast<DWORD>(Column::Dx10FormatDimensionAsDecimal):
+            return MakeDWORDAsDecimal(&ddsLoader, &dds_loader::Loader::GetDx10Dimension, pvarData);
+
+        case static_cast<DWORD>(Column::Dx10FormatMiscFlagAsDecimal):
+            return MakeDWORDAsDecimal(&ddsLoader, &dds_loader::Loader::GetDx10MiscFlag, pvarData);
+
+        case static_cast<DWORD>(Column::Dx10FormatArraySizeAsDecimal):
+            return MakeDWORDAsDecimal(&ddsLoader, &dds_loader::Loader::GetDx10ArraySize, pvarData);
+
+        case static_cast<DWORD>(Column::Dx10FormatMiscFlag2AsDecimal):
+            return MakeDWORDAsDecimal(&ddsLoader, &dds_loader::Loader::GetDx10MiscFlag2, pvarData);
 
         [[unlikely]]default:
             assert(false);

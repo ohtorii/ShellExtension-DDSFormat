@@ -57,7 +57,7 @@ namespace dds_loader {
             Caps = std::char_traits<wchar_t>::length(L"ALPHA|COMPLEX|TEXTURE|MIPMAP|") + 1,
 
             //+1 == '\0'のぶん
-            Caps2 = std::char_traits<wchar_t>::length(L"CUBEMAP|POSITIVE_X|NEGATIVE_X|POSITIVE_Y|NEGATIVE_Y|POSITIVE_Z|NEGATIVE_Z|VOLUME|") + 1,
+            Caps2 = std::char_traits<wchar_t>::length(L"CUBEMAP|X+|X-|Y+|Y-|Z+|Z-|VOLUME|") + 1,
 
             //+1 == '\0'のぶん
             Reserved1 = static_cast<size_t>(MemberSize::Reserved1Size) + 1,
@@ -252,6 +252,26 @@ namespace dds_loader {
         /// <returns></returns>
         size_t GetDx10FormatAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
 
+        /// <summary>
+        /// DDS_HEADER_DX10::Dimensionを取得する
+        /// </summary>
+        /// <returns></returns>
+        DWORD GetDx10Dimension()const;
+        /// <summary>
+        /// DDS_HEADER_DX10::MiscFlagを取得する
+        /// </summary>
+        /// <returns></returns>
+        DWORD GetDx10MiscFlag()const;
+        /// <summary>
+        /// DDS_HEADER_DX10::ArraySizeを取得する
+        /// </summary>
+        /// <returns></returns>
+        DWORD GetDx10ArraySize()const;
+        /// <summary>
+        /// DDS_HEADER_DX10::MiscFlag2を取得する
+        /// </summary>
+        /// <returns></returns>
+        DWORD GetDx10MiscFlag2()const;
     private:
         void Initialize();
 
