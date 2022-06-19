@@ -1,7 +1,7 @@
 ﻿#include "DDSLoader.h"
 #include "internal/DDSFormatUtils.h"
 #include "internal/DDSFormatFlags.h"
-
+#include <bit>
 
 using namespace dds_loader_utils;
 
@@ -77,6 +77,21 @@ namespace dds_loader {
         }
         m_chunk.m_validDDS = true;
         return true;
+    }
+    DWORD   Loader::GetWidth()const {
+        return m_chunk.m_header.dx7.dwWidth;
+    }
+    DWORD   Loader::GetHeight()const {
+        return m_chunk.m_header.dx7.dwHeight;
+    }
+    bool    Loader::IsWidth2N()const {
+        return std::has_single_bit(GetWidth());
+    }
+    bool    Loader::IsHeight2N()const {
+        return std::has_single_bit(GetHeight());
+    }
+    bool    Loader::IsSquare()const {
+        return GetWidth() == GetHeight();
     }
 
     size_t Loader::GetFourCCAsAsciiDump(wchar_t* wcstr, size_t sizeInWords)const {

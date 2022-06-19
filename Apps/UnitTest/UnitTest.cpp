@@ -10,10 +10,12 @@ namespace UnitTest
     TEST_CLASS(UnitTest)
     {
         Loader m_LoaderDXT1;
+        Loader m_LoaderRectangle;
     public:
 
         UnitTest() {
             Assert::AreEqual(m_LoaderDXT1.Load(MAKE_ABS_PATH("DXT1.dds")),true);
+            Assert::AreEqual(m_LoaderRectangle.Load(MAKE_ABS_PATH("64x32.dds")),true);
         }
         TEST_METHOD(GetFourCC) {
             {
@@ -84,7 +86,18 @@ namespace UnitTest
                 Assert::AreEqual(szField[3], L'P');
             }
         }
-
+        TEST_METHOD(WidthHeight) {
+            Assert::AreEqual(m_LoaderRectangle.GetWidth(),static_cast<DWORD>(64));
+            Assert::AreEqual(m_LoaderRectangle.GetHeight(),static_cast<DWORD>(32));
+        }
+        TEST_METHOD(Is2N) {
+            Assert::AreEqual(m_LoaderRectangle.IsWidth2N(),true);
+            Assert::AreEqual(m_LoaderRectangle.IsHeight2N(),true);
+        }
+        TEST_METHOD(IsSquare) {
+            Assert::AreEqual(m_LoaderDXT1.IsSquare(), true);
+            Assert::AreEqual(m_LoaderRectangle.IsSquare(), false);
+        }
         TEST_METHOD(GetMipMapCount) {
             Assert::AreEqual(m_LoaderDXT1.GetMipMapCount(),static_cast<DWORD>(7));
         }

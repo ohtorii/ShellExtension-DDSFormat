@@ -78,6 +78,32 @@ namespace dds_loader {
         };
 
         /// <summary>
+        /// 幅を取得する
+        /// </summary>
+        /// <returns></returns>
+        DWORD GetWidth()const;
+        /// <summary>
+        ///高さを取得する
+        /// </summary>
+        /// <returns></returns>
+        DWORD GetHeight()const;
+        /// <summary>
+        /// 幅が２の冪乗かどうか
+        /// </summary>
+        /// <returns></returns>
+        bool IsWidth2N()const;
+        /// <summary>
+        /// 高さが２の冪乗かどうか
+        /// </summary>
+        /// <returns></returns>
+        bool IsHeight2N()const;
+        /// <summary>
+        /// 高さと幅が正方形か
+        /// </summary>
+        /// <returns></returns>
+        bool IsSquare()const;
+
+        /// <summary>
         ///  FourCCをバイト配列で得る
         /// (e.g. 1) {'D','X','1','0'}
         /// (e.g. 2) {0x00, 0x00, 0x00, 0x24}  //<--A16B16G16R16

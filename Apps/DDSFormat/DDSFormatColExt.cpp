@@ -13,7 +13,12 @@
 
 namespace {
     enum class Column : DWORD{
-        ForCCAsciiDump=0,
+        Width=0,
+        Height,
+        Width2N,
+        Height2N,
+        Square,
+        ForCCAsciiDump,
         ForCCHexDump,
         PixelFormat,
         Depth,
@@ -61,6 +66,18 @@ namespace {
         psci-> scid.fmtid = CLSID_DDSFormatColExt;
         psci-> scid.pid   = pid;
         psci-> vt         = VT_INT;
+        psci-> fmt        = LVCFMT_RIGHT;
+        psci-> csFlags    = SHCOLSTATE_TYPE_INT;
+        psci-> cChars     = chars;
+        wcsncpy_s(psci->wszTitle, _countof(psci->wszTitle), title, _TRUNCATE);
+        wcsncpy_s(psci->wszDescription, _countof(psci->wszDescription), description, _TRUNCATE);
+        return S_OK;
+    }
+
+    HRESULT InitializeAsBool(SHCOLUMNINFO* psci, DWORD pid, UINT chars, const wchar_t* title, const wchar_t* description) {
+        psci-> scid.fmtid = CLSID_DDSFormatColExt;
+        psci-> scid.pid   = pid;
+        psci-> vt         = VT_BOOL;
         psci-> fmt        = LVCFMT_RIGHT;
         psci-> csFlags    = SHCOLSTATE_TYPE_INT;
         psci-> cChars     = chars;
@@ -117,6 +134,21 @@ namespace dds_format {
     {
         switch (dwIndex)
         {
+        case static_cast<DWORD>(Column::Width):
+            return InitializeAsInt(psci, dwIndex, 5, _T("Width"), _T("Width of DDS"));
+
+        case static_cast<DWORD>(Column::Height):
+            return InitializeAsInt(psci, dwIndex, 6, _T("Height"), _T("Height of DDS"));
+
+        case static_cast<DWORD>(Column::Width2N):
+            return InitializeAsBool(psci, dwIndex, 6, _T("Width(2^n)"), _T("DDS width is a power of 2?"));
+
+        case static_cast<DWORD>(Column::Height2N):
+            return InitializeAsBool(psci, dwIndex, 6, _T("Height(2^n)"), _T("DDS height is a power of 2?"));
+
+        case static_cast<DWORD>(Column::Square):
+            return InitializeAsBool(psci, dwIndex, 6, _T("Square"), _T("Is the DDS height-width square?"));
+
         case static_cast<DWORD>(Column::ForCCAsciiDump):
             return InitializeAsString(psci, dwIndex, 4, _T("FourCC(Ascii)"), _T("FourCC area as ascii dump"));
 
@@ -231,6 +263,16 @@ namespace dds_format {
 
         switch (pscid->pid)
         {
+        case static_cast<DWORD>(Column::Width):
+            return MakeDWORDAsDecimal(&ddsLoader, &dds_loader::Loader::GetWidth, pvarData);
+
+        case static_cast<DWORD>(Column::Height):
+            return MakeDWORDAsDecimal(&ddsLoader, &dds_loader::Loader::GetHeight, pvarData);
+
+        case static_cast<DWORD>(Column::Width2N):
+        case static_cast<DWORD>(Column::Height2N):
+        case static_cast<DWORD>(Column::Square):
+
         case static_cast<DWORD>(Column::ForCCAsciiDump):
             return MakeWStr(&ddsLoader, &dds_loader::Loader::GetFourCCAsAsciiDump, pvarData);
 
