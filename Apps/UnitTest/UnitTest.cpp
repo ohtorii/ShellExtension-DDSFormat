@@ -120,7 +120,19 @@ namespace UnitTest
             Assert::AreEqual(Loader.Load(MAKE_ABS_PATH("dwCaps2_0xFFFFFFFF.dds")), true);
             std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::Caps2)>      szField;
             const auto writeCount = Loader.GetCaps2AsWChar(szField.data(), szField.size());
-            Assert::AreEqual(writeCount,static_cast<size_t>(0x51));
+            Assert::AreEqual(writeCount,static_cast<size_t>(0x21));
+        }
+        TEST_METHOD(BC7) {
+            Loader Loader;
+            Assert::AreEqual(Loader.Load(MAKE_ABS_PATH("BC7.dds")), true);
+            std::array<wchar_t, static_cast<size_t>(Loader::MinimumBufferCount::Dx10Format)> szField;
+            Loader.GetDx10FormatAsWChar(szField.data(),szField.size());
+            Assert::AreEqual(szField.data()             , L"BC7_UNORM");
+            Assert::AreEqual(Loader.GetDx10Format()     , static_cast<DWORD>(98));
+            Assert::AreEqual(Loader.GetDx10Dimension()  , static_cast<DWORD>(3));
+            Assert::AreEqual(Loader.GetDx10ArraySize()  , static_cast<DWORD>(1));
+            Assert::AreEqual(Loader.GetDx10MiscFlag()   , static_cast<DWORD>(0));
+            Assert::AreEqual(Loader.GetDx10MiscFlag2()  , static_cast<DWORD>(1));
         }
     };
 }
