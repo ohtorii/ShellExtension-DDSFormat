@@ -240,7 +240,7 @@ namespace dds_loader {
         ///
         /// </summary>
         /// <param name="wcstr"></param>
-        /// <param name="sizeInWords">書き込み先の文字数（最低でもvMinimumBufferCount::DWordAsDecimal）</param>
+        /// <param name="sizeInWords">書き込み先の文字数（最低でもMinimumBufferCount::DWordAsDecimal）</param>
         /// <returns></returns>
         size_t GetDx10FormatAsDecimal(wchar_t* wcstr, size_t sizeInWords)const;
 
@@ -248,7 +248,7 @@ namespace dds_loader {
         ///
         /// </summary>
         /// <param name="wcstr"></param>
-        /// <param name="sizeInWords">書き込み先の文字数（最低でもvMinimumBufferCount::DX10Format）</param>
+        /// <param name="sizeInWords">書き込み先の文字数（最低でもMinimumBufferCount::Dx10Format）</param>
         /// <returns></returns>
         size_t GetDx10FormatAsWChar(wchar_t* wcstr, size_t sizeInWords)const;
 
