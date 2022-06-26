@@ -174,7 +174,7 @@ namespace dds_loader {
     }
 
     std::array<BYTE, static_cast<size_t>(Loader::MemberSize::Reserved1Size)> Loader::GetReserved1()const {
-        std::array<BYTE, static_cast<size_t>(Loader::MemberSize::Reserved1Size)> result;
+        std::array<BYTE, static_cast<size_t>(Loader::MemberSize::Reserved1Size)> result = {0,};
         auto it = result.begin();
         for (const DWORD value : m_chunk.m_header.dx7.dwReserved1) {
             BYTE buf[sizeof(DWORD)];
