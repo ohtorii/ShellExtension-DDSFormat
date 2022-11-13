@@ -13,6 +13,9 @@
       <UniqueIdentifier>{01b72f11-3587-42ed-adeb-8ad20b3b3549}</UniqueIdentifier>
       <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
     </Filter>
+    <Filter Include="Source Files\IDL">
+      <UniqueIdentifier>{e38461ab-13d0-4909-ac7f-705c942f2bb8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DDSFormatColExt.cpp">
@@ -21,14 +24,14 @@
     <ClCompile Include="DLLInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedCode\GeneratedCode.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DDSFormatColExtCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Logger.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedCode\GeneratedCode.cpp">
+      <Filter>Source Files\IDL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -38,11 +41,6 @@
     <None Include="Resource\DDSFormatColExt.rgs">
       <Filter>Resource Files</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Midl Include="DDSFormatCOM.idl">
-      <Filter>Source Files</Filter>
-    </Midl>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -68,5 +66,10 @@
     <ResourceCompile Include="Resource\DDSFormat.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="DDSFormatCOM.idl">
+      <Filter>Source Files\IDL</Filter>
+    </Midl>
   </ItemGroup>
 </Project>
